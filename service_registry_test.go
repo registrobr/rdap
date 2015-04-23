@@ -193,3 +193,51 @@ func TestMatchIPNetwork(t *testing.T) {
 		}
 	}
 }
+
+func TestMatchDomain(t *testing.T) {
+	tests := []struct {
+		description   string
+		registry      ServiceRegistry
+		fqdn          string
+		expected      []string
+		expectedError error
+	}{
+		{
+			description: "it should match a fqdn",
+			fqdn:        "a.b.example.com",
+			registry: ServiceRegistry{
+				Services: ServicesList{
+					{
+						{"net", "com"},
+						{"https://registry.example.com/myrdap/"},
+					},
+					{
+						{"org", "mytld"},
+						{"http://example.org/"},
+					},
+					{
+						{"xn--zckzah"},
+						{"https://example.net/rdapxn--zckzah/", "http://example.net/rdapxn--zckzah/"},
+					},
+				},
+			},
+			expected: []string{
+				"https://registry.example.com/myrdap/",
+			},
+		},
+	}
+
+	for i, test := range tests {
+		urls, err := test.registry.MatchDomain(test.fqdn)
+
+		if test.expectedError != nil && err != nil {
+			if test.expectedError.Error() != err.Error() {
+				t.Fatalf("At index %d (%s): expected error %s, got %s", i, test.description, test.expectedError, err)
+			}
+		}
+
+		if !reflect.DeepEqual(test.expected, urls) {
+			t.Fatalf("At index %d (%s): expected %v, got %v", i, test.description, test.expected, urls)
+		}
+	}
+}

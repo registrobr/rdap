@@ -15,7 +15,7 @@ func (s ServiceRegistry) MatchAS(asn uint32) ([]string, error) {
 	)
 
 	if len(s.Services) > 0 {
-		chosenURIs = s.Services[0].Entries()
+		chosenURIs = s.Services[0].URIs()
 	}
 
 	for _, service := range s.Services {
@@ -79,6 +79,43 @@ func (s ServiceRegistry) MatchIPNetwork(network *net.IPNet) ([]string, error) {
 			if entryBegin.Cmp(begin) >= 0 && entryEnd.Cmp(end) <= 0 && chosenSize.Cmp(diff) == 1 {
 				chosenURIs = service.URIs()
 				chosenSize.Sub(entryEnd, entryBegin)
+			}
+		}
+	}
+
+	return chosenURIs, nil
+}
+
+func (s ServiceRegistry) MatchDomain(fqdn string) ([]string, error) {
+	var (
+		chosenURIs []string
+		chosenSize int
+	)
+
+	if len(s.Services) > 0 {
+		chosenURIs = s.Services[0].URIs()
+	}
+
+	fqdnParts := strings.Split(fqdn, ".")
+
+	for _, service := range s.Services {
+		for _, entry := range service.Entries() {
+			index := 0
+			entryParts := strings.Split(entry, ".")
+
+			if len(fqdnParts) < len(entryParts) {
+				fqdnParts, entryParts = entryParts, fqdnParts
+			}
+
+			for i := len(entryParts) - 1; i >= 0; i-- {
+				if entryParts[i] == fqdnParts[i] {
+					index++
+				}
+			}
+
+			if index > chosenSize {
+				chosenURIs = service.URIs()
+				chosenSize = index
 			}
 		}
 	}
