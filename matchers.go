@@ -1,6 +1,7 @@
 package protocol
 
 import (
+	"math"
 	"math/big"
 	"net"
 	"strconv"
@@ -10,8 +11,12 @@ import (
 func (s ServiceRegistry) MatchAS(asn uint32) ([]string, error) {
 	var (
 		chosenURIs []string
-		chosenSize uint32
+		chosenSize uint32 = math.MaxUint32
 	)
+
+	if len(s.Services) > 0 {
+		chosenURIs = s.Services[0].Entries()
+	}
 
 	for _, service := range s.Services {
 		for _, entry := range service.Entries() {
@@ -31,7 +36,7 @@ func (s ServiceRegistry) MatchAS(asn uint32) ([]string, error) {
 			begin := uint32(b)
 			end := uint32(e)
 
-			if asn >= begin && asn <= end && begin-end > chosenSize {
+			if asn >= begin && asn <= end && end-begin < chosenSize {
 				chosenSize = begin - end
 				chosenURIs = service.URIs()
 			}
