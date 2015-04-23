@@ -163,6 +163,19 @@ func TestMatchIPNetwork(t *testing.T) {
 				"http://example.org/",
 			},
 		},
+		{
+			description: "it should not match an ip network due to invalid cidr",
+			ipnet:       "127.0.0.1/32",
+			registry: ServiceRegistry{
+				Services: ServicesList{
+					{
+						{"invalid"},
+						{},
+					},
+				},
+			},
+			expectedError: fmt.Errorf("invalid CIDR address: invalid"),
+		},
 	}
 
 	for i, test := range tests {
