@@ -49,11 +49,19 @@ func (s ServiceRegistry) MatchAS(asn uint32) ([]string, error) {
 func (s ServiceRegistry) MatchIPNetwork(network *net.IPNet) ([]string, error) {
 	var (
 		chosenURIs []string
-		chosenSize = big.NewInt(0).SetBytes(net.CIDRMask(128, 128))
+		chosenSize = big.NewInt(0)
 		begin      = big.NewInt(0).SetBytes(network.IP)
 		mask       = big.NewInt(0).SetBytes(network.Mask)
 		end        = big.NewInt(0).Xor(begin, mask)
 	)
+
+	size := net.IPv6len
+
+	if network.IP.To4() != nil {
+		size = net.IPv4len
+	}
+
+	chosenSize.SetBytes(net.CIDRMask(size*8, size*8))
 
 	for _, service := range s.Services {
 		for _, entry := range service.Entries() {
