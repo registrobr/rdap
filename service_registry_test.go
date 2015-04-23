@@ -3,6 +3,7 @@ package protocol
 import (
 	"encoding/json"
 	"fmt"
+	"net"
 	"reflect"
 
 	"testing"
@@ -94,6 +95,79 @@ func TestMatchAS(t *testing.T) {
 
 	for i, test := range tests {
 		urls, err := test.registry.MatchAS(test.as)
+
+		if test.expectedError != nil && err != nil {
+			if test.expectedError.Error() != err.Error() {
+				t.Fatalf("At index %d (%s): expected error %s, got %s", i, test.description, test.expectedError, err)
+			}
+		}
+
+		if !reflect.DeepEqual(test.expected, urls) {
+			t.Fatalf("At index %d (%s): expected %v, got %v", i, test.description, test.expected, urls)
+		}
+	}
+}
+
+func TestMatchIPNetwork(t *testing.T) {
+	tests := []struct {
+		description   string
+		registry      ServiceRegistry
+		ipnet         string
+		expected      []string
+		expectedError error
+	}{
+		{
+			description: "it should match an ipv6 network",
+			ipnet:       "2001:0200:1000::/48",
+			registry: ServiceRegistry{
+				Services: ServicesList{
+					{
+						{"2001:0200::/23", "2001:db8::/32"},
+						{"https://rir2.example.com/myrdap/"},
+					},
+					{
+						{"2600::/16", "2100:ffff::/32"},
+						{"http://example.org/"},
+					},
+					{
+						{"2001:0200:1000::/36"},
+						{"https://example.net/rdaprir2/", "http://example.net/rdaprir2/"},
+					},
+				},
+			},
+			expected: []string{
+				"https://example.net/rdaprir2/",
+				"http://example.net/rdaprir2/",
+			},
+		},
+		{
+			description: "it should match an ipv4 network",
+			ipnet:       "192.0.2.1/25",
+			registry: ServiceRegistry{
+				Services: ServicesList{
+					{
+						{"1.0.0.0/8", "192.0.0.0/8"},
+						{"https://rir1.example.com/myrdap/"},
+					},
+					{
+						{"28.2.0.0/16", "192.0.2.0/24"},
+						{"http://example.org/"},
+					},
+					{
+						{"28.3.0.0/16"},
+						{"https://example.net/rdaprir2/", "http://example.net/rdaprir2/"},
+					},
+				},
+			},
+			expected: []string{
+				"http://example.org/",
+			},
+		},
+	}
+
+	for i, test := range tests {
+		_, ipnet, _ := net.ParseCIDR(test.ipnet)
+		urls, err := test.registry.MatchIPNetwork(ipnet)
 
 		if test.expectedError != nil && err != nil {
 			if test.expectedError.Error() != err.Error() {
