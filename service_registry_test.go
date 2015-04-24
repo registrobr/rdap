@@ -221,6 +221,19 @@ func TestMatchDomain(t *testing.T) {
 				"https://registry.example.com/myrdap/",
 			},
 		},
+		{
+			description: "it should match no fqdn",
+			fqdn:        "a.example.com",
+			registry: ServiceRegistry{
+				Services: ServicesList{
+					{
+						{"a.b.example.com"},
+						{"https://registry.example.com/myrdap/"},
+					},
+				},
+			},
+			expected: nil,
+		},
 	}
 
 	for i, test := range tests {

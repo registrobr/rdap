@@ -3,6 +3,7 @@ package protocol
 import (
 	"math"
 	"net"
+	"reflect"
 	"strconv"
 	"strings"
 )
@@ -12,10 +13,6 @@ func (s ServiceRegistry) MatchAS(asn uint32) ([]string, error) {
 		uris []string
 		size uint32 = math.MaxUint32
 	)
-
-	if len(s.Services) > 0 {
-		uris = s.Services[0].URIs()
-	}
 
 	for _, service := range s.Services {
 		for _, entry := range service.Entries() {
@@ -47,10 +44,14 @@ func (s ServiceRegistry) MatchAS(asn uint32) ([]string, error) {
 
 func (s ServiceRegistry) MatchIPNetwork(network *net.IPNet) ([]string, error) {
 	var (
-		uris   []string
-		size   = 0
-		lastIP = lastAddress(network)
+		uris []string
+		size = 0
 	)
+
+	lastIP := make(net.IP, len(network.IP))
+	for i := 0; i < len(network.IP); i++ {
+		lastIP[i] = network.IP[i] | ^network.Mask[i]
+	}
 
 	for _, service := range s.Services {
 		for _, entry := range service.Entries() {
@@ -74,45 +75,31 @@ func (s ServiceRegistry) MatchIPNetwork(network *net.IPNet) ([]string, error) {
 
 func (s ServiceRegistry) MatchDomain(fqdn string) ([]string, error) {
 	var (
-		uris []string
-		size int
+		uris      []string
+		size      int
+		fqdnParts = strings.Split(fqdn, ".")
 	)
-
-	if len(s.Services) > 0 {
-		uris = s.Services[0].URIs()
-	}
-
-	fqdnParts := strings.Split(fqdn, ".")
 
 	for _, service := range s.Services {
 		for _, entry := range service.Entries() {
-			index := 0
 			entryParts := strings.Split(entry, ".")
 
 			if len(fqdnParts) < len(entryParts) {
-				fqdnParts, entryParts = entryParts, fqdnParts
+				continue
 			}
 
-			for i := len(entryParts) - 1; i >= 0; i-- {
-				if entryParts[i] == fqdnParts[i] {
-					index++
-				}
+			fqdnExcerpt := fqdnParts[len(fqdnParts)-len(entryParts):]
+
+			if !reflect.DeepEqual(fqdnExcerpt, entryParts) {
+				continue
 			}
 
-			if index > size {
+			if longest := len(entryParts); longest > size {
 				uris = service.URIs()
-				size = index
+				size = longest
 			}
 		}
 	}
 
 	return uris, nil
-}
-
-func lastAddress(n *net.IPNet) net.IP {
-	b := make(net.IP, len(n.IP))
-	for i := 0; i <= len(n.IP)-1; i++ {
-		b[i] = n.IP[i] | ^n.Mask[i]
-	}
-	return b
 }
