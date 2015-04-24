@@ -10,12 +10,12 @@ import (
 
 func (s ServiceRegistry) MatchAS(asn uint32) ([]string, error) {
 	var (
-		chosenURIs []string
-		chosenSize uint32 = math.MaxUint32
+		uris []string
+		size uint32 = math.MaxUint32
 	)
 
 	if len(s.Services) > 0 {
-		chosenURIs = s.Services[0].URIs()
+		uris = s.Services[0].URIs()
 	}
 
 	for _, service := range s.Services {
@@ -36,32 +36,32 @@ func (s ServiceRegistry) MatchAS(asn uint32) ([]string, error) {
 			begin := uint32(b)
 			end := uint32(e)
 
-			if asn >= begin && asn <= end && end-begin < chosenSize {
-				chosenSize = begin - end
-				chosenURIs = service.URIs()
+			if asn >= begin && asn <= end && end-begin < size {
+				size = end - begin
+				uris = service.URIs()
 			}
 		}
 	}
 
-	return chosenURIs, nil
+	return uris, nil
 }
 
 func (s ServiceRegistry) MatchIPNetwork(network *net.IPNet) ([]string, error) {
 	var (
-		chosenURIs []string
-		chosenSize = big.NewInt(0)
-		begin      = big.NewInt(0).SetBytes(network.IP)
-		mask       = big.NewInt(0).SetBytes(network.Mask)
-		end        = big.NewInt(0).Xor(begin, mask)
+		uris  []string
+		size  = big.NewInt(0)
+		begin = big.NewInt(0).SetBytes(network.IP)
+		mask  = big.NewInt(0).SetBytes(network.Mask)
+		end   = big.NewInt(0).Xor(begin, mask)
 	)
 
-	size := net.IPv6len
+	ipSize := net.IPv6len
 
 	if network.IP.To4() != nil {
-		size = net.IPv4len
+		ipSize = net.IPv4len
 	}
 
-	chosenSize.SetBytes(net.CIDRMask(size*8, size*8))
+	size.SetBytes(net.CIDRMask(ipSize*8, ipSize*8))
 
 	for _, service := range s.Services {
 		for _, entry := range service.Entries() {
@@ -76,24 +76,24 @@ func (s ServiceRegistry) MatchIPNetwork(network *net.IPNet) ([]string, error) {
 			entryEnd := big.NewInt(0).Xor(entryBegin, mask)
 			diff := big.NewInt(0).Sub(entryBegin, entryEnd)
 
-			if entryBegin.Cmp(begin) >= 0 && entryEnd.Cmp(end) <= 0 && chosenSize.Cmp(diff) == 1 {
-				chosenURIs = service.URIs()
-				chosenSize.Sub(entryEnd, entryBegin)
+			if entryBegin.Cmp(begin) >= 0 && entryEnd.Cmp(end) <= 0 && size.Cmp(diff) == 1 {
+				uris = service.URIs()
+				size.Sub(entryEnd, entryBegin)
 			}
 		}
 	}
 
-	return chosenURIs, nil
+	return uris, nil
 }
 
 func (s ServiceRegistry) MatchDomain(fqdn string) ([]string, error) {
 	var (
-		chosenURIs []string
-		chosenSize int
+		uris []string
+		size int
 	)
 
 	if len(s.Services) > 0 {
-		chosenURIs = s.Services[0].URIs()
+		uris = s.Services[0].URIs()
 	}
 
 	fqdnParts := strings.Split(fqdn, ".")
@@ -113,12 +113,12 @@ func (s ServiceRegistry) MatchDomain(fqdn string) ([]string, error) {
 				}
 			}
 
-			if index > chosenSize {
-				chosenURIs = service.URIs()
-				chosenSize = index
+			if index > size {
+				uris = service.URIs()
+				size = index
 			}
 		}
 	}
 
-	return chosenURIs, nil
+	return uris, nil
 }
