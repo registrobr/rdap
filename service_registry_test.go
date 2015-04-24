@@ -96,10 +96,8 @@ func TestMatchAS(t *testing.T) {
 	for i, test := range tests {
 		urls, err := test.registry.MatchAS(test.as)
 
-		if test.expectedError != nil && err != nil {
-			if test.expectedError.Error() != err.Error() {
-				t.Fatalf("At index %d (%s): expected error %s, got %s", i, test.description, test.expectedError, err)
-			}
+		if test.expectedError != nil && fmt.Sprintf("%v", test.expectedError) != fmt.Sprintf("%v", err) {
+			t.Fatalf("At index %d (%s): expected error %s, got %s", i, test.description, test.expectedError, err)
 		}
 
 		if !reflect.DeepEqual(test.expected, urls) {
@@ -182,10 +180,8 @@ func TestMatchIPNetwork(t *testing.T) {
 		_, ipnet, _ := net.ParseCIDR(test.ipnet)
 		urls, err := test.registry.MatchIPNetwork(ipnet)
 
-		if test.expectedError != nil && err != nil {
-			if test.expectedError.Error() != err.Error() {
-				t.Fatalf("At index %d (%s): expected error %s, got %s", i, test.description, test.expectedError, err)
-			}
+		if test.expectedError != nil && fmt.Sprintf("%v", test.expectedError) != fmt.Sprintf("%v", err) {
+			t.Fatalf("At index %d (%s): expected error %s, got %s", i, test.description, test.expectedError, err)
 		}
 
 		if !reflect.DeepEqual(test.expected, urls) {
@@ -230,10 +226,8 @@ func TestMatchDomain(t *testing.T) {
 	for i, test := range tests {
 		urls, err := test.registry.MatchDomain(test.fqdn)
 
-		if test.expectedError != nil && err != nil {
-			if test.expectedError.Error() != err.Error() {
-				t.Fatalf("At index %d (%s): expected error %s, got %s", i, test.description, test.expectedError, err)
-			}
+		if test.expectedError != nil && fmt.Sprintf("%v", test.expectedError) != fmt.Sprintf("%v", err) {
+			t.Fatalf("At index %d (%s): expected error %s, got %s", i, test.description, test.expectedError, err)
 		}
 
 		if !reflect.DeepEqual(test.expected, urls) {

@@ -78,7 +78,7 @@ func (s ServiceRegistry) MatchIPNetwork(network *net.IPNet) ([]string, error) {
 
 			if entryBegin.Cmp(begin) >= 0 && entryEnd.Cmp(end) <= 0 && size.Cmp(diff) == 1 {
 				uris = service.URIs()
-				size.Sub(entryEnd, entryBegin)
+				*size = *diff
 			}
 		}
 	}
