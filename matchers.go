@@ -2,7 +2,6 @@ package protocol
 
 import (
 	"math"
-	"math/big"
 	"net"
 	"strconv"
 	"strings"
@@ -49,17 +48,9 @@ func (s ServiceRegistry) MatchAS(asn uint32) ([]string, error) {
 func (s ServiceRegistry) MatchIPNetwork(network *net.IPNet) ([]string, error) {
 	var (
 		uris   []string
-		size   = big.NewInt(0)
+		size   = 0
 		lastIP = lastAddress(network)
 	)
-
-	ipSize := net.IPv6len
-
-	if network.IP.To4() != nil {
-		ipSize = net.IPv4len
-	}
-
-	size.SetBytes(net.CIDRMask(ipSize*8, ipSize*8))
 
 	for _, service := range s.Services {
 		for _, entry := range service.Entries() {
@@ -69,13 +60,11 @@ func (s ServiceRegistry) MatchIPNetwork(network *net.IPNet) ([]string, error) {
 				return nil, err
 			}
 
-			entryBegin := big.NewInt(0).SetBytes(ipnet.IP)
-			entryEnd := big.NewInt(0).SetBytes(lastAddress(ipnet))
-			diff := big.NewInt(0).Sub(entryEnd, entryBegin)
+			mask, _ := ipnet.Mask.Size()
 
-			if ipnet.Contains(network.IP) && ipnet.Contains(lastIP) && diff.Cmp(size) == -1 {
+			if ipnet.Contains(network.IP) && ipnet.Contains(lastIP) && mask > size {
 				uris = service.URIs()
-				*size = *diff
+				size = mask
 			}
 		}
 	}
