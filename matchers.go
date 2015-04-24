@@ -48,11 +48,9 @@ func (s ServiceRegistry) MatchAS(asn uint32) ([]string, error) {
 
 func (s ServiceRegistry) MatchIPNetwork(network *net.IPNet) ([]string, error) {
 	var (
-		uris  []string
-		size  = big.NewInt(0)
-		begin = big.NewInt(0).SetBytes(network.IP)
-		mask  = big.NewInt(0).SetBytes(network.Mask)
-		end   = big.NewInt(0).Xor(begin, mask)
+		uris   []string
+		size   = big.NewInt(0)
+		lastIP = lastAddress(network)
 	)
 
 	ipSize := net.IPv6len
@@ -72,11 +70,10 @@ func (s ServiceRegistry) MatchIPNetwork(network *net.IPNet) ([]string, error) {
 			}
 
 			entryBegin := big.NewInt(0).SetBytes(ipnet.IP)
-			mask := big.NewInt(0).SetBytes(ipnet.Mask)
-			entryEnd := big.NewInt(0).Xor(entryBegin, mask)
-			diff := big.NewInt(0).Sub(entryBegin, entryEnd)
+			entryEnd := big.NewInt(0).SetBytes(lastAddress(ipnet))
+			diff := big.NewInt(0).Sub(entryEnd, entryBegin)
 
-			if entryBegin.Cmp(begin) >= 0 && entryEnd.Cmp(end) <= 0 && size.Cmp(diff) == 1 {
+			if ipnet.Contains(network.IP) && ipnet.Contains(lastIP) && diff.Cmp(size) == -1 {
 				uris = service.URIs()
 				*size = *diff
 			}
@@ -121,4 +118,12 @@ func (s ServiceRegistry) MatchDomain(fqdn string) ([]string, error) {
 	}
 
 	return uris, nil
+}
+
+func lastAddress(n *net.IPNet) net.IP {
+	b := make(net.IP, len(n.IP))
+	for i := 0; i <= len(n.IP)-1; i++ {
+		b[i] = n.IP[i] | ^n.Mask[i]
+	}
+	return b
 }
