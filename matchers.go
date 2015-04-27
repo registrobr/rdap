@@ -3,7 +3,6 @@ package protocol
 import (
 	"math"
 	"net"
-	"reflect"
 	"strconv"
 	"strings"
 
@@ -83,6 +82,7 @@ func (s ServiceRegistry) MatchDomain(fqdn string) ([]string, error) {
 	)
 
 	for _, service := range s.Services {
+	Entries:
 		for _, entry := range service.Entries() {
 			entryParts := strings.Split(entry, ".")
 
@@ -92,8 +92,10 @@ func (s ServiceRegistry) MatchDomain(fqdn string) ([]string, error) {
 
 			fqdnExcerpt := fqdnParts[len(fqdnParts)-len(entryParts):]
 
-			if !reflect.DeepEqual(fqdnExcerpt, entryParts) {
-				continue
+			for i := len(entryParts) - 1; i >= 0; i-- {
+				if fqdnExcerpt[i] != entryParts[i] {
+					continue Entries
+				}
 			}
 
 			if longest := len(entryParts); longest > size {
