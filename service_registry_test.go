@@ -76,7 +76,7 @@ func TestMatchAS(t *testing.T) {
 					},
 				},
 			},
-			expectedError: fmt.Errorf("strconv.ParseInt: parsing \"invalid\": invalid syntax"),
+			expectedError: fmt.Errorf("strconv.ParseUint: parsing \"invalid\": invalid syntax"),
 		},
 		{
 			description: "it should not match an as number due to invalid end of as range",
@@ -89,7 +89,7 @@ func TestMatchAS(t *testing.T) {
 					},
 				},
 			},
-			expectedError: fmt.Errorf("strconv.ParseInt: parsing \"invalid\": invalid syntax"),
+			expectedError: fmt.Errorf("strconv.ParseUint: parsing \"invalid\": invalid syntax"),
 		},
 	}
 

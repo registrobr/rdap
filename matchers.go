@@ -17,13 +17,13 @@ func (s ServiceRegistry) MatchAS(asn uint32) ([]string, error) {
 	for _, service := range s.Services {
 		for _, entry := range service.Entries() {
 			asRange := strings.Split(entry, "-")
-			b, err := strconv.Atoi(asRange[0])
+			b, err := strconv.ParseUint(asRange[0], 10, 32)
 
 			if err != nil {
 				return nil, err
 			}
 
-			e, err := strconv.Atoi(asRange[1])
+			e, err := strconv.ParseUint(asRange[1], 10, 32)
 
 			if err != nil {
 				return nil, err
@@ -44,11 +44,11 @@ func (s ServiceRegistry) MatchAS(asn uint32) ([]string, error) {
 
 func (s ServiceRegistry) MatchIPNetwork(network *net.IPNet) ([]string, error) {
 	var (
-		uris []string
-		size = 0
+		uris   []string
+		size   = 0
+		lastIP = make(net.IP, len(network.IP))
 	)
 
-	lastIP := make(net.IP, len(network.IP))
 	for i := 0; i < len(network.IP); i++ {
 		lastIP[i] = network.IP[i] | ^network.Mask[i]
 	}
