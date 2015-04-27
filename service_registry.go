@@ -29,7 +29,7 @@ func (s Service) URIs() []string {
 }
 
 func (s *Service) UnmarshalJSON(b []byte) error {
-	sv := [2]Values(Service{})
+	sv := [2]Values{}
 
 	if err := json.Unmarshal(b, &sv); err != nil {
 		return err
