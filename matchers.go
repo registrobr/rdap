@@ -6,6 +6,8 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+
+	"github.com/registrobr/rdap-client/Godeps/_workspace/src/github.com/miekg/dns/idn"
 )
 
 func (s ServiceRegistry) MatchAS(asn uint32) ([]string, error) {
@@ -77,7 +79,7 @@ func (s ServiceRegistry) MatchDomain(fqdn string) ([]string, error) {
 	var (
 		uris      []string
 		size      int
-		fqdnParts = strings.Split(fqdn, ".")
+		fqdnParts = strings.Split(idn.ToPunycode(fqdn), ".")
 	)
 
 	for _, service := range s.Services {

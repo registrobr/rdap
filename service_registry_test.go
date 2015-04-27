@@ -222,6 +222,19 @@ func TestMatchDomain(t *testing.T) {
 			},
 		},
 		{
+			description: "it should match an idn",
+			fqdn:        "feijão.jabá.com",
+			registry: ServiceRegistry{
+				Services: ServicesList{
+					{
+						{"xn--jab-gla.com"},
+						{"https://example.com/myrdap/"},
+					},
+				},
+			},
+			expected: []string{"https://example.com/myrdap/"},
+		},
+		{
 			description: "it should match no fqdn",
 			fqdn:        "a.example.com",
 			registry: ServiceRegistry{
