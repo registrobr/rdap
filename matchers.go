@@ -1,4 +1,4 @@
-package protocol
+package rdap
 
 import (
 	"math"
@@ -9,6 +9,10 @@ import (
 	"github.com/registrobr/rdap-client/Godeps/_workspace/src/github.com/miekg/dns/idn"
 )
 
+// MatchAS iterates through a list of services looking for the more
+// specific range to which an AS number "asn" belongs.
+//
+// See http://tools.ietf.org/html/rfc7484#section-5.3
 func (s ServiceRegistry) MatchAS(asn uint32) ([]string, error) {
 	var (
 		uris []string
@@ -43,6 +47,11 @@ func (s ServiceRegistry) MatchAS(asn uint32) ([]string, error) {
 	return uris, nil
 }
 
+// MatchIPNetwork iterates through a list of services looking for the more
+// specific IP network to which the IP network "network" belongs.
+//
+// See http://tools.ietf.org/html/rfc7484#section-5.1
+//     http://tools.ietf.org/html/rfc7484#section-5.2
 func (s ServiceRegistry) MatchIPNetwork(network *net.IPNet) ([]string, error) {
 	var (
 		uris   []string
@@ -74,6 +83,10 @@ func (s ServiceRegistry) MatchIPNetwork(network *net.IPNet) ([]string, error) {
 	return uris, nil
 }
 
+// MatchDomain iterates through a list of services looking for the label-wise
+// longest match of the target domain name "fqdn".
+//
+// See http://tools.ietf.org/html/rfc7484#section-4
 func (s ServiceRegistry) MatchDomain(fqdn string) ([]string, error) {
 	var (
 		uris      []string

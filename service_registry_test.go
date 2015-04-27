@@ -1,4 +1,4 @@
-package protocol
+package rdap
 
 import (
 	"encoding/json"
