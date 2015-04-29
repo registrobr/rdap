@@ -13,11 +13,8 @@ import (
 // specific range to which an AS number "asn" belongs.
 //
 // See http://tools.ietf.org/html/rfc7484#section-5.3
-func (s ServiceRegistry) MatchAS(asn uint32) ([]string, error) {
-	var (
-		uris []string
-		size uint32 = math.MaxUint32
-	)
+func (s ServiceRegistry) MatchAS(asn uint32) (uris []string, err error) {
+	var size uint32 = math.MaxUint32
 
 	for _, service := range s.Services {
 		for _, entry := range service.Entries() {
@@ -52,9 +49,8 @@ func (s ServiceRegistry) MatchAS(asn uint32) ([]string, error) {
 //
 // See http://tools.ietf.org/html/rfc7484#section-5.1
 //     http://tools.ietf.org/html/rfc7484#section-5.2
-func (s ServiceRegistry) MatchIPNetwork(network *net.IPNet) ([]string, error) {
+func (s ServiceRegistry) MatchIPNetwork(network *net.IPNet) (uris []string, err error) {
 	var (
-		uris   []string
 		size   = 0
 		lastIP = make(net.IP, len(network.IP))
 	)
@@ -87,9 +83,8 @@ func (s ServiceRegistry) MatchIPNetwork(network *net.IPNet) ([]string, error) {
 // longest match of the target domain name "fqdn".
 //
 // See http://tools.ietf.org/html/rfc7484#section-4
-func (s ServiceRegistry) MatchDomain(fqdn string) ([]string, error) {
+func (s ServiceRegistry) MatchDomain(fqdn string) (uris []string, err error) {
 	var (
-		uris      []string
 		size      int
 		fqdnParts = strings.Split(idn.ToPunycode(fqdn), ".")
 	)
