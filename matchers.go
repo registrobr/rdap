@@ -16,7 +16,7 @@ import (
 func (s ServiceRegistry) MatchAS(asn uint32) ([]string, error) {
 	var (
 		uris []string
-		size = math.MaxUint32
+		size uint32 = math.MaxUint32
 	)
 
 	for _, service := range s.Services {
