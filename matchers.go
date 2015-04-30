@@ -13,29 +13,26 @@ import (
 // specific range to which an AS number "asn" belongs.
 //
 // See http://tools.ietf.org/html/rfc7484#section-5.3
-func (s ServiceRegistry) MatchAS(asn uint32) (uris []string, err error) {
-	var size uint32 = math.MaxUint32
+func (s ServiceRegistry) MatchAS(asn uint64) (uris []string, err error) {
+	var size uint64 = math.MaxUint32
 
 	for _, service := range s.Services {
 		for _, entry := range service.Entries() {
 			asRange := strings.Split(entry, "-")
-			b, err := strconv.ParseUint(asRange[0], 10, 32)
+			begin, err := strconv.ParseUint(asRange[0], 10, 32)
 
 			if err != nil {
 				return nil, err
 			}
 
-			e, err := strconv.ParseUint(asRange[1], 10, 32)
+			end, err := strconv.ParseUint(asRange[1], 10, 32)
 
 			if err != nil {
 				return nil, err
 			}
 
-			begin := uint32(b)
-			end := uint32(e)
-
-			if asn >= begin && asn <= end && end-begin < size {
-				size = end - begin
+			if diff := end - begin; asn >= begin && asn <= end && diff < size {
+				size = diff
 				uris = service.URIs()
 			}
 		}
@@ -50,14 +47,7 @@ func (s ServiceRegistry) MatchAS(asn uint32) (uris []string, err error) {
 // See http://tools.ietf.org/html/rfc7484#section-5.1
 //     http://tools.ietf.org/html/rfc7484#section-5.2
 func (s ServiceRegistry) MatchIPNetwork(network *net.IPNet) (uris []string, err error) {
-	var (
-		size   = 0
-		lastIP = make(net.IP, len(network.IP))
-	)
-
-	for i := 0; i < len(network.IP); i++ {
-		lastIP[i] = network.IP[i] | ^network.Mask[i]
-	}
+	size := 0
 
 	for _, service := range s.Services {
 		for _, entry := range service.Entries() {
@@ -67,11 +57,17 @@ func (s ServiceRegistry) MatchIPNetwork(network *net.IPNet) (uris []string, err 
 				return nil, err
 			}
 
-			mask, _ := ipnet.Mask.Size()
+			if ipnet.Contains(network.IP) {
+				lastIP := make(net.IP, len(network.IP))
 
-			if ipnet.Contains(network.IP) && ipnet.Contains(lastIP) && mask > size {
-				uris = service.URIs()
-				size = mask
+				for i := 0; i < len(network.IP); i++ {
+					lastIP[i] = network.IP[i] | ^network.Mask[i]
+				}
+
+				if mask, _ := ipnet.Mask.Size(); ipnet.Contains(lastIP) && mask > size {
+					uris = service.URIs()
+					size = mask
+				}
 			}
 		}
 	}
