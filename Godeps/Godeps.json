@@ -6,8 +6,20 @@
 	],
 	"Deps": [
 		{
+			"ImportPath": "github.com/gregjones/httpcache",
+			"Rev": "a2645c9fb8bb4ad1cbad1bef941af9f8a32287de"
+		},
+		{
 			"ImportPath": "github.com/miekg/dns",
 			"Rev": "015384b10e412f5cc44ae408d1a2bd773027474c"
+		},
+		{
+			"ImportPath": "github.com/petar/GoLLRB/llrb",
+			"Rev": "53be0d36a84c2a886ca057d34b6aa4468df9ccb4"
+		},
+		{
+			"ImportPath": "github.com/peterbourgon/diskv",
+			"Rev": "72aa5da9f7d1125b480b83c6dc5ad09a1f04508c"
 		}
 	]
 }
