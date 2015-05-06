@@ -8,6 +8,8 @@ import (
 	"sort"
 	"strconv"
 
+	"github.com/registrobr/rdap-client/protocol"
+
 	"github.com/registrobr/rdap-client/Godeps/_workspace/src/github.com/gregjones/httpcache"
 	"github.com/registrobr/rdap-client/Godeps/_workspace/src/github.com/gregjones/httpcache/diskcache"
 )
@@ -30,11 +32,6 @@ type Client struct {
 	rdapEndpoint string
 }
 
-// TODO Replace by a protocol object
-type Response struct {
-	Body string
-}
-
 func NewClient(cacheDir string) *Client {
 	return &Client{
 		cacheDir:     cacheDir,
@@ -46,21 +43,33 @@ func (c *Client) SetRDAPEndpoint(uri string) {
 	c.rdapEndpoint = uri
 }
 
-func (c *Client) QueryDomain(fqdn string) (*Response, error) {
-	return c.query(dns, fqdn)
+func (c *Client) QueryDomain(fqdn string) (*protocol.DomainResponse, error) {
+	r := &protocol.DomainResponse{}
+
+	if err := c.query(dns, fqdn, r); err != nil {
+		return nil, err
+	}
+
+	return r, nil
 }
 
-func (c *Client) QueryASN(number string) (*Response, error) {
+func (c *Client) QueryASN(number string) (*protocol.ASResponse, error) {
 	as, err := strconv.ParseUint(number, 10, 32)
 
 	if err != nil {
 		return nil, err
 	}
 
-	return c.query(asn, as)
+	r := &protocol.ASResponse{}
+
+	if err := c.query(asn, as, r); err != nil {
+		return nil, err
+	}
+
+	return r, nil
 }
 
-func (c *Client) QueryIPNetwork(ipnet string) (*Response, error) {
+func (c *Client) QueryIPNetwork(ipnet string) (*protocol.IPNetwork, error) {
 	_, cidr, err := net.ParseCIDR(ipnet)
 
 	if err != nil {
@@ -73,10 +82,16 @@ func (c *Client) QueryIPNetwork(ipnet string) (*Response, error) {
 		kind = ipv6
 	}
 
-	return c.query(kind, cidr)
+	r := &protocol.IPNetwork{}
+
+	if err := c.query(kind, cidr, r); err != nil {
+		return nil, err
+	}
+
+	return r, nil
 }
 
-func (c *Client) query(kind kind, object interface{}) (*Response, error) {
+func (c *Client) query(kind kind, identifier interface{}, object interface{}) error {
 	var (
 		err  error
 		uris Values
@@ -85,39 +100,37 @@ func (c *Client) query(kind kind, object interface{}) (*Response, error) {
 	)
 
 	if err := c.fetchAndUnmarshal(uri, &r); err != nil {
-		return nil, err
+		return err
 	}
 
 	switch kind {
 	case dns:
-		uris, err = r.MatchDomain(object.(string))
+		uris, err = r.MatchDomain(identifier.(string))
 	case asn:
-		uris, err = r.MatchAS(object.(uint64))
+		uris, err = r.MatchAS(identifier.(uint64))
 	case ipv4, ipv6:
-		uris, err = r.MatchIPNetwork(object.(*net.IPNet))
+		uris, err = r.MatchIPNetwork(identifier.(*net.IPNet))
 	}
 
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	if len(uris) == 0 {
-		return nil, fmt.Errorf("no matches for %v", object)
+		return fmt.Errorf("no matches for %v", identifier)
 	}
 
 	sort.Sort(uris)
 
 	for _, uri := range uris {
-		rsp := Response{}
-
-		if err := c.fetchAndUnmarshal(uri, &rsp); err != nil {
+		if err := c.fetchAndUnmarshal(uri, object); err != nil {
 			continue
 		}
 
-		return &rsp, nil
+		return nil
 	}
 
-	return nil, fmt.Errorf("no data available for %v", object)
+	return fmt.Errorf("no data available for %v", identifier)
 }
 
 func (c *Client) fetchAndUnmarshal(uri string, object interface{}) error {

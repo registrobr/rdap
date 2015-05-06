@@ -8,17 +8,21 @@ import (
 	"net/http/httptest"
 	"reflect"
 	"testing"
+
+	"github.com/registrobr/rdap-client/protocol"
 )
 
 type scenario struct {
 	description   string
 	endpointURI   string
 	kind          kind
+	identifier    interface{}
 	object        interface{}
+	registryBody  string
 	registry      *ServiceRegistry
 	rdapObject    interface{}
 	keepURIs      bool
-	expected      *Response
+	expected      interface{}
 	expectedError error
 }
 
@@ -91,7 +95,8 @@ func TestQuery(t *testing.T) {
 		{
 			description: "it should get an error when querying for a domain (invalid URI in bootstrap response)",
 			kind:        dns,
-			object:      "example.net",
+			identifier:  "example.net",
+			object:      &protocol.DomainResponse{},
 			keepURIs:    true,
 			registry: &ServiceRegistry{
 				Services: ServicesList{
@@ -106,7 +111,8 @@ func TestQuery(t *testing.T) {
 		{
 			description: "it should get an error when querying for a domain (no matches in bootstrap response)",
 			kind:        dns,
-			object:      "example.com",
+			identifier:  "example.com",
+			object:      &protocol.DomainResponse{},
 			registry: &ServiceRegistry{
 				Services: ServicesList{{}},
 			},
@@ -115,7 +121,8 @@ func TestQuery(t *testing.T) {
 		{
 			description: "it should get an error when querying for an AS number (invalid ASN range)",
 			kind:        asn,
-			object:      uint64(1),
+			identifier:  uint64(1),
+			object:      &protocol.ASResponse{},
 			registry: &ServiceRegistry{
 				Services: ServicesList{
 					{
@@ -129,7 +136,8 @@ func TestQuery(t *testing.T) {
 		{
 			description:   "it should get an error when querying for an object (invalid endpoint URI)",
 			kind:          asn,
-			object:        uint64(1),
+			identifier:    uint64(1),
+			object:        &protocol.ASResponse{},
 			endpointURI:   "&&gh&&&ij%s",
 			expectedError: fmt.Errorf("Get &&gh&&&ijasn: unsupported protocol scheme \"\""),
 		},
@@ -142,7 +150,7 @@ func TestQuery(t *testing.T) {
 				switch r.URL.Path {
 				case fmt.Sprintf("/%s", test.kind):
 					b, _ = json.Marshal(test.registry)
-				case fmt.Sprintf("/%s/%v", test.kind, test.object):
+				case fmt.Sprintf("/%s/%v", test.kind, test.identifier):
 					b, _ = json.Marshal(test.rdapObject)
 				default:
 					t.Fatal("not expecting uri", r.URL)
@@ -153,7 +161,7 @@ func TestQuery(t *testing.T) {
 		)
 
 		if test.registry != nil && len(test.registry.Services[0][1]) > 0 && !test.keepURIs {
-			test.registry.Services[0][1][0] = fmt.Sprintf("%s/%s/%v", ts.URL, test.kind, test.object)
+			test.registry.Services[0][1][0] = fmt.Sprintf("%s/%s/%v", ts.URL, test.kind, test.identifier)
 		}
 
 		dir, err := ioutil.TempDir("/tmp", "rdap-test")
@@ -170,15 +178,15 @@ func TestQuery(t *testing.T) {
 			c.SetRDAPEndpoint(ts.URL + "/%v")
 		}
 
-		r, err := c.query(test.kind, test.object)
+		err = c.query(test.kind, test.identifier, test.object)
 
 		if test.expectedError != nil {
 			if fmt.Sprintf("%v", test.expectedError) != fmt.Sprintf("%v", err) {
 				t.Fatalf("%s: expected error %s, got %s", test.description, test.expectedError, err)
 			}
 		} else {
-			if !reflect.DeepEqual(test.expected, r) {
-				t.Fatalf("%s: expected %v, got %v", test.description, test.expected, r)
+			if !reflect.DeepEqual(test.expected, test.object) {
+				t.Fatalf("%s: expected %v, got %v", test.description, test.expected, test.object)
 			}
 		}
 	}
@@ -189,51 +197,51 @@ func TestQueryByKind(t *testing.T) {
 		{
 			description: "it should get the right response when querying for a domain",
 			kind:        dns,
-			object:      "example.com",
+			identifier:  "example.com",
 			registry: &ServiceRegistry{
 				Services: ServicesList{
 					{
 						{"com"},
-						{""}, // will be replaced by {ts.URL}/{test.kind}/{test.object} in awhile
+						{""}, // will be replaced by {ts.URL}/{test.kind}/{test.identifier} in awhile
 					},
 				},
 			},
-			rdapObject: Response{
-				Body: "hello, world",
+			rdapObject: protocol.DomainResponse{
+				ObjectClassName: "test",
 			},
-			expected: &Response{
-				Body: "hello, world",
+			expected: &protocol.DomainResponse{
+				ObjectClassName: "test",
 			},
 		},
 		{
 			description: "it should get the right response when querying for an AS number",
 			kind:        asn,
-			object:      "123",
+			identifier:  "123",
 			registry: &ServiceRegistry{
 				Services: ServicesList{
 					{
 						{"100-200"},
-						{""}, // will be replaced by {ts.URL}/{test.kind}/{test.object} in awhile
+						{""}, // will be replaced by {ts.URL}/{test.kind}/{test.identifier} in awhile
 					},
 				},
 			},
-			rdapObject: Response{
-				Body: "hello, world",
+			rdapObject: protocol.ASResponse{
+				ObjectClassName: "test",
 			},
-			expected: &Response{
-				Body: "hello, world",
+			expected: &protocol.ASResponse{
+				ObjectClassName: "test",
 			},
 		},
 		{
 			description:   "it should return an error due to invalid AS number",
 			kind:          asn,
-			object:        "invalid",
+			identifier:    "invalid",
 			expectedError: fmt.Errorf("strconv.ParseUint: parsing \"invalid\": invalid syntax"),
 		},
 		{
 			description: "it should get the right response when querying for an IP network",
 			kind:        ipv4,
-			object:      "192.0.2.1/25",
+			identifier:  "192.0.2.1/25",
 			registry: &ServiceRegistry{
 				Services: ServicesList{
 					{
@@ -242,17 +250,17 @@ func TestQueryByKind(t *testing.T) {
 					},
 				},
 			},
-			rdapObject: Response{
-				Body: "hello, world",
+			rdapObject: protocol.IPNetwork{
+				ObjectClassName: "test",
 			},
-			expected: &Response{
-				Body: "hello, world",
+			expected: &protocol.IPNetwork{
+				ObjectClassName: "test",
 			},
 		},
 		{
 			description: "it should get the right response when querying for an IP network",
 			kind:        ipv6,
-			object:      "2001:0200:1000::/48",
+			identifier:  "2001:0200:1000::/48",
 			registry: &ServiceRegistry{
 				Services: ServicesList{
 					{
@@ -261,18 +269,39 @@ func TestQueryByKind(t *testing.T) {
 					},
 				},
 			},
-			rdapObject: Response{
-				Body: "hello, world",
+			rdapObject: protocol.IPNetwork{
+				ObjectClassName: "test",
 			},
-			expected: &Response{
-				Body: "hello, world",
+			expected: &protocol.IPNetwork{
+				ObjectClassName: "test",
 			},
 		},
 		{
 			description:   "it should return an error due to invalid CIDR",
 			kind:          ipv4,
-			object:        "192.168.0.0/invalid",
+			identifier:    "192.168.0.0/invalid",
 			expectedError: fmt.Errorf("invalid CIDR address: 192.168.0.0/invalid"),
+		},
+		{
+			description:   "it should return an error due to invalid JSON in bootstrap response when querying for a domain",
+			kind:          dns,
+			identifier:    "example.com",
+			registryBody:  "invalid",
+			expectedError: fmt.Errorf("invalid character 'i' looking for beginning of value"),
+		},
+		{
+			description:   "it should return an error due to invalid JSON in bootstrap response when querying for an AS number",
+			kind:          asn,
+			identifier:    "1",
+			registryBody:  "invalid",
+			expectedError: fmt.Errorf("invalid character 'i' looking for beginning of value"),
+		},
+		{
+			description:   "it should return an error due to invalid JSON in bootstrap response when querying for an IP network",
+			kind:          ipv4,
+			identifier:    "192.168.0.0/24",
+			registryBody:  "invalid",
+			expectedError: fmt.Errorf("invalid character 'i' looking for beginning of value"),
 		},
 	}
 
@@ -282,8 +311,12 @@ func TestQueryByKind(t *testing.T) {
 				var b []byte
 				switch r.URL.Path {
 				case fmt.Sprintf("/%s", test.kind):
-					b, _ = json.Marshal(test.registry)
-				case fmt.Sprintf("/%s/%v", test.kind, test.object):
+					if len(test.registryBody) > 0 {
+						b = []byte(test.registryBody)
+					} else {
+						b, _ = json.Marshal(test.registry)
+					}
+				case fmt.Sprintf("/%s/%v", test.kind, test.identifier):
 					b, _ = json.Marshal(test.rdapObject)
 				default:
 					t.Fatal("not expecting uri", r.URL)
@@ -294,7 +327,7 @@ func TestQueryByKind(t *testing.T) {
 		)
 
 		if test.registry != nil && len(test.registry.Services[0][1]) > 0 && !test.keepURIs {
-			test.registry.Services[0][1][0] = fmt.Sprintf("%s/%s/%v", ts.URL, test.kind, test.object)
+			test.registry.Services[0][1][0] = fmt.Sprintf("%s/%s/%v", ts.URL, test.kind, test.identifier)
 		}
 
 		dir, err := ioutil.TempDir("/tmp", "rdap-test")
@@ -307,17 +340,17 @@ func TestQueryByKind(t *testing.T) {
 		c.SetRDAPEndpoint(ts.URL + "/%v")
 
 		var (
-			r      *Response
-			object = test.object.(string)
+			r          interface{}
+			identifier = test.identifier.(string)
 		)
 
 		switch test.kind {
 		case dns:
-			r, err = c.QueryDomain(object)
+			r, err = c.QueryDomain(identifier)
 		case asn:
-			r, err = c.QueryASN(object)
+			r, err = c.QueryASN(identifier)
 		case ipv4, ipv6:
-			r, err = c.QueryIPNetwork(object)
+			r, err = c.QueryIPNetwork(identifier)
 		}
 
 		if test.expectedError != nil {
