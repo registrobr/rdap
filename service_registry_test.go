@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net"
 	"reflect"
+	"sort"
 
 	"testing"
 )
@@ -262,5 +263,19 @@ func TestMatchDomain(t *testing.T) {
 		if !reflect.DeepEqual(test.expected, urls) {
 			t.Fatalf("At index %d (%s): expected %v, got %v", i, test.description, test.expected, urls)
 		}
+	}
+}
+
+func TestValuesSort(t *testing.T) {
+	var (
+		v  = Values{"http:", "https:"}
+		v0 = make(Values, len(v))
+	)
+
+	copy(v0, v)
+	sort.Sort(v0)
+
+	if reflect.DeepEqual(v, v0) {
+		t.Fatal("not sorting Values accordingly")
 	}
 }
