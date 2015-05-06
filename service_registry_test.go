@@ -63,7 +63,10 @@ func TestMatchAS(t *testing.T) {
 					},
 				},
 			},
-			expected: []string{"http://example.net/rdaprir2/", "https://example.net/rdaprir2/"},
+			expected: []string{
+				"http://example.net/rdaprir2/",
+				"https://example.net/rdaprir2/",
+			},
 		},
 		{
 			description: "it should not match an as number due to invalid beginning of as range",

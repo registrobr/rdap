@@ -1,8 +1,6 @@
 package rdap
 
 import (
-	"encoding/json"
-	"sort"
 	"strings"
 	"time"
 )
@@ -38,19 +36,6 @@ func (s Service) Entries() []string {
 // URIs is a helper that returns the list of URIs of a service
 func (s Service) URIs() []string {
 	return s[1]
-}
-
-func (s *Service) UnmarshalJSON(b []byte) error {
-	sv := [2]Values{}
-
-	if err := json.Unmarshal(b, &sv); err != nil {
-		return err
-	}
-
-	sort.Sort(sv[1])
-	*s = sv
-
-	return nil
 }
 
 func (v Values) Len() int {
