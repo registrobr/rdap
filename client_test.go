@@ -240,7 +240,7 @@ func TestQueryByKind(t *testing.T) {
 		},
 		{
 			description: "it should get the right response when querying for an IP network",
-			kind:        ipv4,
+			kind:        ip,
 			identifier:  "192.0.2.1/25",
 			registry: &ServiceRegistry{
 				Services: ServicesList{
@@ -258,27 +258,8 @@ func TestQueryByKind(t *testing.T) {
 			},
 		},
 		{
-			description: "it should get the right response when querying for an IP network",
-			kind:        ipv6,
-			identifier:  "2001:0200:1000::/48",
-			registry: &ServiceRegistry{
-				Services: ServicesList{
-					{
-						{"2001:0200:1000::/36"},
-						{""},
-					},
-				},
-			},
-			rdapObject: protocol.IPNetwork{
-				ObjectClassName: "test",
-			},
-			expected: &protocol.IPNetwork{
-				ObjectClassName: "test",
-			},
-		},
-		{
 			description:   "it should return an error due to invalid CIDR",
-			kind:          ipv4,
+			kind:          ip,
 			identifier:    "192.168.0.0/invalid",
 			expectedError: fmt.Errorf("invalid CIDR address: 192.168.0.0/invalid"),
 		},
@@ -298,7 +279,7 @@ func TestQueryByKind(t *testing.T) {
 		},
 		{
 			description:   "it should return an error due to invalid JSON in bootstrap response when querying for an IP network",
-			kind:          ipv4,
+			kind:          ip,
 			identifier:    "192.168.0.0/24",
 			registryBody:  "invalid",
 			expectedError: fmt.Errorf("invalid character 'i' looking for beginning of value"),
@@ -349,7 +330,7 @@ func TestQueryByKind(t *testing.T) {
 			r, err = c.QueryDomain(identifier)
 		case asn:
 			r, err = c.QueryASN(identifier)
-		case ipv4, ipv6:
+		case ip:
 			r, err = c.QueryIPNetwork(identifier)
 		}
 

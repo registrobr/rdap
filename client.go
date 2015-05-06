@@ -21,10 +21,9 @@ const (
 type kind string
 
 const (
-	dns  kind = "dns"
-	asn  kind = "asn"
-	ipv4 kind = "ipv4"
-	ipv6 kind = "ipv6"
+	dns kind = "dns"
+	asn kind = "asn"
+	ip  kind = "ip"
 )
 
 type Client struct {
@@ -76,15 +75,9 @@ func (c *Client) QueryIPNetwork(ipnet string) (*protocol.IPNetwork, error) {
 		return nil, err
 	}
 
-	kind := ipv4
-
-	if cidr.IP.To4() == nil {
-		kind = ipv6
-	}
-
 	r := &protocol.IPNetwork{}
 
-	if err := c.query(kind, cidr, r); err != nil {
+	if err := c.query(ip, cidr, r); err != nil {
 		return nil, err
 	}
 
@@ -108,7 +101,7 @@ func (c *Client) query(kind kind, identifier interface{}, object interface{}) er
 		uris, err = r.MatchDomain(identifier.(string))
 	case asn:
 		uris, err = r.MatchAS(identifier.(uint64))
-	case ipv4, ipv6:
+	case ip:
 		uris, err = r.MatchIPNetwork(identifier.(*net.IPNet))
 	}
 
