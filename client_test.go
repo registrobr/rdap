@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
@@ -216,7 +217,7 @@ func TestQueryByKind(t *testing.T) {
 		{
 			description: "it should get the right response when querying for an AS number",
 			kind:        asn,
-			identifier:  "123",
+			identifier:  uint64(123),
 			registry: &ServiceRegistry{
 				Services: ServicesList{
 					{
@@ -233,15 +234,12 @@ func TestQueryByKind(t *testing.T) {
 			},
 		},
 		{
-			description:   "it should return an error due to invalid AS number",
-			kind:          asn,
-			identifier:    "invalid",
-			expectedError: fmt.Errorf("strconv.ParseUint: parsing \"invalid\": invalid syntax"),
-		},
-		{
 			description: "it should get the right response when querying for an IP network",
 			kind:        ip,
-			identifier:  "192.0.2.1/25",
+			identifier: func() *net.IPNet {
+				_, cidr, _ := net.ParseCIDR("192.0.2.1/25")
+				return cidr
+			}(),
 			registry: &ServiceRegistry{
 				Services: ServicesList{
 					{
@@ -258,12 +256,6 @@ func TestQueryByKind(t *testing.T) {
 			},
 		},
 		{
-			description:   "it should return an error due to invalid CIDR",
-			kind:          ip,
-			identifier:    "192.168.0.0/invalid",
-			expectedError: fmt.Errorf("invalid CIDR address: 192.168.0.0/invalid"),
-		},
-		{
 			description:   "it should return an error due to invalid JSON in bootstrap response when querying for a domain",
 			kind:          dns,
 			identifier:    "example.com",
@@ -273,14 +265,17 @@ func TestQueryByKind(t *testing.T) {
 		{
 			description:   "it should return an error due to invalid JSON in bootstrap response when querying for an AS number",
 			kind:          asn,
-			identifier:    "1",
+			identifier:    uint64(1),
 			registryBody:  "invalid",
 			expectedError: fmt.Errorf("invalid character 'i' looking for beginning of value"),
 		},
 		{
-			description:   "it should return an error due to invalid JSON in bootstrap response when querying for an IP network",
-			kind:          ip,
-			identifier:    "192.168.0.0/24",
+			description: "it should return an error due to invalid JSON in bootstrap response when querying for an IP network",
+			kind:        ip,
+			identifier: func() *net.IPNet {
+				_, cidr, _ := net.ParseCIDR("192.0.2.1/25")
+				return cidr
+			}(),
 			registryBody:  "invalid",
 			expectedError: fmt.Errorf("invalid character 'i' looking for beginning of value"),
 		},
@@ -320,18 +315,15 @@ func TestQueryByKind(t *testing.T) {
 		c := NewClient(dir)
 		c.SetRDAPEndpoint(ts.URL + "/%v")
 
-		var (
-			r          interface{}
-			identifier = test.identifier.(string)
-		)
+		var r interface{}
 
 		switch test.kind {
 		case dns:
-			r, err = c.QueryDomain(identifier)
+			r, err = c.QueryDomain(test.identifier.(string))
 		case asn:
-			r, err = c.QueryASN(identifier)
+			r, err = c.QueryASN(test.identifier.(uint64))
 		case ip:
-			r, err = c.QueryIPNetwork(identifier)
+			r, err = c.QueryIPNetwork(test.identifier.(*net.IPNet))
 		}
 
 		if test.expectedError != nil {

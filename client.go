@@ -6,7 +6,6 @@ import (
 	"net"
 	"net/http"
 	"sort"
-	"strconv"
 
 	"github.com/registrobr/rdap-client/protocol"
 
@@ -52,13 +51,7 @@ func (c *Client) QueryDomain(fqdn string) (*protocol.DomainResponse, error) {
 	return r, nil
 }
 
-func (c *Client) QueryASN(number string) (*protocol.ASResponse, error) {
-	as, err := strconv.ParseUint(number, 10, 32)
-
-	if err != nil {
-		return nil, err
-	}
-
+func (c *Client) QueryASN(as uint64) (*protocol.ASResponse, error) {
 	r := &protocol.ASResponse{}
 
 	if err := c.query(asn, as, r); err != nil {
@@ -68,16 +61,10 @@ func (c *Client) QueryASN(number string) (*protocol.ASResponse, error) {
 	return r, nil
 }
 
-func (c *Client) QueryIPNetwork(ipnet string) (*protocol.IPNetwork, error) {
-	_, cidr, err := net.ParseCIDR(ipnet)
-
-	if err != nil {
-		return nil, err
-	}
-
+func (c *Client) QueryIPNetwork(ipnet *net.IPNet) (*protocol.IPNetwork, error) {
 	r := &protocol.IPNetwork{}
 
-	if err := c.query(ip, cidr, r); err != nil {
+	if err := c.query(ip, ipnet, r); err != nil {
 		return nil, err
 	}
 
