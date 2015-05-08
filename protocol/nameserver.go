@@ -10,6 +10,6 @@ type Nameserver struct {
 	LDHName         string       `json:"ldhName,omitempty"`
 	UnicodeName     string       `json:"unicodeName,omitempty"`
 	IPAddresses     *IPAddresses `json:"ipAddresses"`
-	Status          []Status     `json:"status,omitempty"`
+	HostStatus      string       `json:"nicbr_status,omitempty"`
 	Remarks         []Remark     `json:"remarks,omitempty"`
 }

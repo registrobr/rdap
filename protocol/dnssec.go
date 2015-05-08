@@ -1,13 +1,12 @@
 package protocol
 
-import "br/core/protocol"
-
 type DS struct {
-	KeyTag     int                   `json:"keyTag"`
-	Algorithm  protocol.DSAlgorithm  `json:"algorithm"`
-	Digest     string                `json:"digest"`
-	DigestType protocol.DSDigestType `json:"digestType"`
-	Events     []Event               `json:"events,omitempty"`
+	KeyTag     int     `json:"keyTag"`
+	Algorithm  int     `json:"algorithm"`
+	Digest     string  `json:"digest"`
+	DigestType int     `json:"digestType"`
+	Events     []Event `json:"events,omitempty"`
+	DSStatus   string  `json:"nicbr_status,omitempty"`
 }
 
 type SecureDNS struct {

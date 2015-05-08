@@ -11,7 +11,9 @@ type Entity struct {
 	VCardArray      []interface{} `json:"vCardArray,omitempty"`
 	Roles           []string      `json:"roles,omitempty"`
 	PublicIds       []PublicID    `json:"publicIds,omitempty"`
+	Responsible     string        `json:"nicbr_responsible,omitempty"`
 	Entities        []Entity      `json:"entities,omitempty"`
 	Events          []Event       `json:"events,omitempty"`
 	Links           []Link        `json:"links,omitempty"`
+	Remarks         []Remark      `json:"remarks,omitempty"`
 }

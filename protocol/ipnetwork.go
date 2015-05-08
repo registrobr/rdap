@@ -9,7 +9,7 @@ type IPNetwork struct {
 	Name            string   `json:"name,omitempty"`
 	Type            string   `json:"type"`
 	Country         string   `json:"country"`
-	ParentHandle    string   `json:"parentHandle"`
+	ParentHandle    string   `json:"parentHandle,omitempty"`
 	Status          []string `json:"status"`
 	Links           []Link   `json:"links"`
 	Events          []Event  `json:"events"`
