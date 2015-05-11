@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	ianaRDAPEndpoint = "https://data.iana.org/rdap/%v.json"
+	IANARDAPEndpoint = "https://data.iana.org/rdap/%v.json"
 )
 
 type kind string
@@ -33,7 +33,7 @@ type Client struct {
 func NewClient(cacheDir string) *Client {
 	return &Client{
 		cacheDir:     cacheDir,
-		rdapEndpoint: ianaRDAPEndpoint,
+		rdapEndpoint: IANARDAPEndpoint,
 	}
 }
 
