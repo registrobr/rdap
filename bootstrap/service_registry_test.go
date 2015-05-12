@@ -1,4 +1,4 @@
-package rdap
+package bootstrap
 
 import (
 	"encoding/json"

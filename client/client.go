@@ -1,4 +1,4 @@
-package rdap
+package client
 
 import (
 	"encoding/json"
@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"sort"
 
+	"github.com/registrobr/rdap-client/bootstrap"
 	"github.com/registrobr/rdap-client/protocol"
 
 	"github.com/registrobr/rdap-client/Godeps/_workspace/src/github.com/gregjones/httpcache"
@@ -74,9 +75,9 @@ func (c *Client) QueryIPNetwork(ipnet *net.IPNet) (*protocol.IPNetwork, error) {
 func (c *Client) query(kind kind, identifier interface{}, object interface{}) error {
 	var (
 		err  error
-		uris Values
+		uris bootstrap.Values
 		uri  = fmt.Sprintf(c.rdapEndpoint, kind)
-		r    = ServiceRegistry{}
+		r    = bootstrap.ServiceRegistry{}
 	)
 
 	if err := c.fetchAndUnmarshal(uri, &r); err != nil {

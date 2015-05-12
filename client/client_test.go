@@ -1,4 +1,4 @@
-package rdap
+package client
 
 import (
 	"encoding/json"
@@ -10,6 +10,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/registrobr/rdap-client/bootstrap"
 	"github.com/registrobr/rdap-client/protocol"
 )
 
@@ -20,7 +21,7 @@ type scenario struct {
 	identifier    interface{}
 	object        interface{}
 	registryBody  string
-	registry      *ServiceRegistry
+	registry      *bootstrap.ServiceRegistry
 	rdapObject    interface{}
 	keepURIs      bool
 	expected      interface{}
@@ -99,8 +100,8 @@ func TestQuery(t *testing.T) {
 			identifier:  "example.net",
 			object:      &protocol.DomainResponse{},
 			keepURIs:    true,
-			registry: &ServiceRegistry{
-				Services: ServicesList{
+			registry: &bootstrap.ServiceRegistry{
+				Services: bootstrap.ServicesList{
 					{
 						{"net"},
 						{"%%gh&%%ij%s", ""},
@@ -114,8 +115,8 @@ func TestQuery(t *testing.T) {
 			kind:        dns,
 			identifier:  "example.com",
 			object:      &protocol.DomainResponse{},
-			registry: &ServiceRegistry{
-				Services: ServicesList{{}},
+			registry: &bootstrap.ServiceRegistry{
+				Services: bootstrap.ServicesList{{}},
 			},
 			expectedError: fmt.Errorf("no matches for example.com"),
 		},
@@ -124,8 +125,8 @@ func TestQuery(t *testing.T) {
 			kind:        asn,
 			identifier:  uint64(1),
 			object:      &protocol.ASResponse{},
-			registry: &ServiceRegistry{
-				Services: ServicesList{
+			registry: &bootstrap.ServiceRegistry{
+				Services: bootstrap.ServicesList{
 					{
 						{"2045-invalid"},
 						{},
@@ -199,8 +200,8 @@ func TestQueryByKind(t *testing.T) {
 			description: "it should get the right response when querying for a domain",
 			kind:        dns,
 			identifier:  "example.com",
-			registry: &ServiceRegistry{
-				Services: ServicesList{
+			registry: &bootstrap.ServiceRegistry{
+				Services: bootstrap.ServicesList{
 					{
 						{"com"},
 						{""}, // will be replaced by {ts.URL}/{test.kind}/{test.identifier} in awhile
@@ -218,8 +219,8 @@ func TestQueryByKind(t *testing.T) {
 			description: "it should get the right response when querying for an AS number",
 			kind:        asn,
 			identifier:  uint64(123),
-			registry: &ServiceRegistry{
-				Services: ServicesList{
+			registry: &bootstrap.ServiceRegistry{
+				Services: bootstrap.ServicesList{
 					{
 						{"100-200"},
 						{""}, // will be replaced by {ts.URL}/{test.kind}/{test.identifier} in awhile
@@ -240,8 +241,8 @@ func TestQueryByKind(t *testing.T) {
 				_, cidr, _ := net.ParseCIDR("192.0.2.1/25")
 				return cidr
 			}(),
-			registry: &ServiceRegistry{
-				Services: ServicesList{
+			registry: &bootstrap.ServiceRegistry{
+				Services: bootstrap.ServicesList{
 					{
 						{"192.0.2.0/24"},
 						{""},
