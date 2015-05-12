@@ -26,6 +26,14 @@ const (
 	ip  kind = "ip"
 )
 
+var (
+	kindToSegment = map[kind]string{
+		dns: "domain",
+		asn: "autnum",
+		ip:  "ip",
+	}
+)
+
 type Client struct {
 	cacheDir     string
 	rdapEndpoint string
@@ -102,9 +110,10 @@ func (c *Client) query(kind kind, identifier interface{}, object interface{}) er
 	}
 
 	sort.Sort(uris)
+	segment := kindToSegment[kind]
 
 	for _, uri := range uris {
-		if err := c.fetchAndUnmarshal(fmt.Sprintf("%s/%v", uri, identifier), object); err != nil {
+		if err := c.fetchAndUnmarshal(fmt.Sprintf("%s/%s/%v", uri, segment, identifier), object); err != nil {
 			continue
 		}
 

@@ -151,8 +151,10 @@ func TestQuery(t *testing.T) {
 				var b []byte
 				switch r.URL.Path {
 				case fmt.Sprintf("/%s", test.kind):
+					t.Log(r.URL.Path)
 					b, _ = json.Marshal(test.registry)
-				case fmt.Sprintf("/%s/%v", test.kind, test.identifier):
+				case fmt.Sprintf("/%s/%v", kindToSegment[test.kind], test.identifier):
+					t.Log(r.URL.Path)
 					b, _ = json.Marshal(test.rdapObject)
 				default:
 					t.Fatal("not expecting uri", r.URL)
@@ -163,7 +165,7 @@ func TestQuery(t *testing.T) {
 		)
 
 		if test.registry != nil && len(test.registry.Services[0][1]) > 0 && !test.keepURIs {
-			test.registry.Services[0][1][0] = fmt.Sprintf("%s/%s/%v", ts.URL, test.kind, test.identifier)
+			test.registry.Services[0][1][0] = ts.URL
 		}
 
 		dir, err := ioutil.TempDir("/tmp", "rdap-test")
@@ -288,12 +290,14 @@ func TestQueryByKind(t *testing.T) {
 				var b []byte
 				switch r.URL.Path {
 				case fmt.Sprintf("/%s", test.kind):
+					t.Log(r.URL.Path)
 					if len(test.registryBody) > 0 {
 						b = []byte(test.registryBody)
 					} else {
 						b, _ = json.Marshal(test.registry)
 					}
-				case fmt.Sprintf("/%s/%v", test.kind, test.identifier):
+				case fmt.Sprintf("/%s/%v", kindToSegment[test.kind], test.identifier):
+					t.Log(r.URL.Path)
 					b, _ = json.Marshal(test.rdapObject)
 				default:
 					t.Fatal("not expecting uri", r.URL)
@@ -304,7 +308,7 @@ func TestQueryByKind(t *testing.T) {
 		)
 
 		if test.registry != nil && len(test.registry.Services[0][1]) > 0 && !test.keepURIs {
-			test.registry.Services[0][1][0] = fmt.Sprintf("%s/%s", ts.URL, test.kind)
+			test.registry.Services[0][1][0] = ts.URL
 		}
 
 		dir, err := ioutil.TempDir("/tmp", "rdap-test")
