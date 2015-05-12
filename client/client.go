@@ -104,7 +104,7 @@ func (c *Client) query(kind kind, identifier interface{}, object interface{}) er
 	sort.Sort(uris)
 
 	for _, uri := range uris {
-		if err := c.fetchAndUnmarshal(uri, object); err != nil {
+		if err := c.fetchAndUnmarshal(fmt.Sprintf("%s/%v", uri, identifier), object); err != nil {
 			continue
 		}
 

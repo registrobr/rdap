@@ -304,7 +304,7 @@ func TestQueryByKind(t *testing.T) {
 		)
 
 		if test.registry != nil && len(test.registry.Services[0][1]) > 0 && !test.keepURIs {
-			test.registry.Services[0][1][0] = fmt.Sprintf("%s/%s/%v", ts.URL, test.kind, test.identifier)
+			test.registry.Services[0][1][0] = fmt.Sprintf("%s/%s", ts.URL, test.kind)
 		}
 
 		dir, err := ioutil.TempDir("/tmp", "rdap-test")
