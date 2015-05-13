@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	IANARDAPEndpoint = "https://data.iana.org/rdap/%v.json"
+	RDAPBootstrap = "https://data.iana.org/rdap/%v.json"
 )
 
 type kind string
@@ -37,19 +37,16 @@ var (
 )
 
 type Client struct {
-	cacheDir     string
-	rdapEndpoint string
+	cacheDir  string
+	Bootstrap string
+	Host      string
 }
 
 func NewClient(cacheDir string) *Client {
 	return &Client{
-		cacheDir:     cacheDir,
-		rdapEndpoint: IANARDAPEndpoint,
+		cacheDir:  cacheDir,
+		Bootstrap: RDAPBootstrap,
 	}
-}
-
-func (c *Client) SetRDAPEndpoint(uri string) {
-	c.rdapEndpoint = uri
 }
 
 func (c *Client) QueryDomain(fqdn string) (*protocol.DomainResponse, error) {
@@ -89,39 +86,40 @@ func (c *Client) QueryIPNetwork(ipnet *net.IPNet) (*protocol.IPNetwork, error) {
 }
 
 func (c *Client) query(kind kind, identifier interface{}, object interface{}) error {
-	var (
-		err  error
-		uris bootstrap.Values
-		uri  = fmt.Sprintf(c.rdapEndpoint, kind)
-		r    = bootstrap.ServiceRegistry{}
-	)
+	uris := []string{}
+	r := bootstrap.ServiceRegistry{}
+	if c.Host == "" {
+		if err := c.fetchAndUnmarshal(c.Bootstrap, &r); err != nil {
+			return err
+		}
 
-	if err := c.fetchAndUnmarshal(uri, &r); err != nil {
-		return err
+		var err error
+		switch kind {
+		case dns:
+			uris, err = r.MatchDomain(identifier.(string))
+		case asn:
+			uris, err = r.MatchAS(identifier.(uint64))
+		case ipv4, ipv6:
+			uris, err = r.MatchIPNetwork(identifier.(*net.IPNet))
+		}
+
+		if err != nil {
+			return err
+		}
+
+		if len(uris) == 0 {
+			return fmt.Errorf("no matches for %v", identifier)
+		}
+	} else {
+		uris = []string{c.Host}
 	}
 
-	switch kind {
-	case dns:
-		uris, err = r.MatchDomain(identifier.(string))
-	case asn:
-		uris, err = r.MatchAS(identifier.(uint64))
-	case ipv4, ipv6:
-		uris, err = r.MatchIPNetwork(identifier.(*net.IPNet))
-	}
-
-	if err != nil {
-		return err
-	}
-
-	if len(uris) == 0 {
-		return fmt.Errorf("no matches for %v", identifier)
-	}
-
-	sort.Sort(uris)
+	sort.Sort(bootstrap.Values(uris))
 	segment := kindToSegment[kind]
 
 	for _, uri := range uris {
-		if err := c.fetchAndUnmarshal(fmt.Sprintf("%s/%s/%v", uri, segment, identifier), object); err != nil {
+		err := c.fetchAndUnmarshal(fmt.Sprintf("%s/%s/%v", uri, segment, identifier), object)
+		if err != nil {
 			continue
 		}
 

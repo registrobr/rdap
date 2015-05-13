@@ -16,7 +16,7 @@ import (
 
 type scenario struct {
 	description   string
-	endpointURI   string
+	bootstrapURI  string
 	kind          kind
 	identifier    interface{}
 	object        interface{}
@@ -140,7 +140,7 @@ func TestQuery(t *testing.T) {
 			kind:          asn,
 			identifier:    uint64(1),
 			object:        &protocol.ASResponse{},
-			endpointURI:   "&&gh&&&ij%s",
+			bootstrapURI:  "&&gh&&&ij%s",
 			expectedError: fmt.Errorf("Get &&gh&&&ijasn: unsupported protocol scheme \"\""),
 		},
 	}
@@ -176,10 +176,10 @@ func TestQuery(t *testing.T) {
 
 		c := NewClient(dir)
 
-		if len(test.endpointURI) > 0 {
-			c.SetRDAPEndpoint(test.endpointURI)
+		if len(test.bootstrapURI) > 0 {
+			c.Bootstrap = test.bootstrapURI
 		} else {
-			c.SetRDAPEndpoint(ts.URL + "/%v")
+			c.Bootstrap = ts.URL + "/%v"
 		}
 
 		err = c.query(test.kind, test.identifier, test.object)
@@ -340,7 +340,7 @@ func TestQueryByKind(t *testing.T) {
 		}
 
 		c := NewClient(dir)
-		c.SetRDAPEndpoint(ts.URL + "/%v")
+		c.Bootstrap = ts.URL + "/%v"
 
 		var r interface{}
 
