@@ -6,6 +6,15 @@
 	],
 	"Deps": [
 		{
+			"ImportPath": "github.com/codegangsta/cli",
+			"Comment": "1.2.0-106-ga889873",
+			"Rev": "a889873af50a499d060097216dcdbcc26ed09e7c"
+		},
+		{
+			"ImportPath": "github.com/davecgh/go-spew/spew",
+			"Rev": "fc32781af5e85e548d3f1abaf0fa3dbe8a72495c"
+		},
+		{
 			"ImportPath": "github.com/gregjones/httpcache",
 			"Rev": "a2645c9fb8bb4ad1cbad1bef941af9f8a32287de"
 		},
