@@ -21,16 +21,18 @@ const (
 type kind string
 
 const (
-	dns kind = "dns"
-	asn kind = "asn"
-	ip  kind = "ip"
+	dns  kind = "dns"
+	asn  kind = "asn"
+	ipv4 kind = "ipv4"
+	ipv6 kind = "ipv6"
 )
 
 var (
 	kindToSegment = map[kind]string{
-		dns: "domain",
-		asn: "autnum",
-		ip:  "ip",
+		dns:  "domain",
+		asn:  "autnum",
+		ipv4: "ip",
+		ipv6: "ip",
 	}
 )
 
@@ -73,7 +75,13 @@ func (c *Client) QueryASN(as uint64) (*protocol.ASResponse, error) {
 func (c *Client) QueryIPNetwork(ipnet *net.IPNet) (*protocol.IPNetwork, error) {
 	r := &protocol.IPNetwork{}
 
-	if err := c.query(ip, ipnet, r); err != nil {
+	kind := ipv4
+
+	if ipnet.IP.To4() == nil {
+		kind = ipv6
+	}
+
+	if err := c.query(kind, ipnet, r); err != nil {
 		return nil, err
 	}
 
@@ -97,7 +105,7 @@ func (c *Client) query(kind kind, identifier interface{}, object interface{}) er
 		uris, err = r.MatchDomain(identifier.(string))
 	case asn:
 		uris, err = r.MatchAS(identifier.(uint64))
-	case ip:
+	case ipv4, ipv6:
 		uris, err = r.MatchIPNetwork(identifier.(*net.IPNet))
 	}
 

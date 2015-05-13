@@ -206,7 +206,7 @@ func TestQueryByKind(t *testing.T) {
 				Services: bootstrap.ServicesList{
 					{
 						{"com"},
-						{""}, // will be replaced by {ts.URL}/{test.kind}/{test.identifier} in awhile
+						{""},
 					},
 				},
 			},
@@ -225,7 +225,7 @@ func TestQueryByKind(t *testing.T) {
 				Services: bootstrap.ServicesList{
 					{
 						{"100-200"},
-						{""}, // will be replaced by {ts.URL}/{test.kind}/{test.identifier} in awhile
+						{""},
 					},
 				},
 			},
@@ -237,8 +237,8 @@ func TestQueryByKind(t *testing.T) {
 			},
 		},
 		{
-			description: "it should get the right response when querying for an IP network",
-			kind:        ip,
+			description: "it should get the right response when querying for an IPv4 network",
+			kind:        ipv4,
 			identifier: func() *net.IPNet {
 				_, cidr, _ := net.ParseCIDR("192.0.2.1/25")
 				return cidr
@@ -247,6 +247,28 @@ func TestQueryByKind(t *testing.T) {
 				Services: bootstrap.ServicesList{
 					{
 						{"192.0.2.0/24"},
+						{""},
+					},
+				},
+			},
+			rdapObject: protocol.IPNetwork{
+				ObjectClassName: "test",
+			},
+			expected: &protocol.IPNetwork{
+				ObjectClassName: "test",
+			},
+		},
+		{
+			description: "it should get the right response when querying for an IPv6 network",
+			kind:        ipv6,
+			identifier: func() *net.IPNet {
+				_, cidr, _ := net.ParseCIDR("2001:0200:1000::/48")
+				return cidr
+			}(),
+			registry: &bootstrap.ServiceRegistry{
+				Services: bootstrap.ServicesList{
+					{
+						{"2001:0200:1000::/36"},
 						{""},
 					},
 				},
@@ -274,7 +296,7 @@ func TestQueryByKind(t *testing.T) {
 		},
 		{
 			description: "it should return an error due to invalid JSON in bootstrap response when querying for an IP network",
-			kind:        ip,
+			kind:        ipv4,
 			identifier: func() *net.IPNet {
 				_, cidr, _ := net.ParseCIDR("192.0.2.1/25")
 				return cidr
@@ -327,7 +349,7 @@ func TestQueryByKind(t *testing.T) {
 			r, err = c.QueryDomain(test.identifier.(string))
 		case asn:
 			r, err = c.QueryASN(test.identifier.(uint64))
-		case ip:
+		case ipv4, ipv6:
 			r, err = c.QueryIPNetwork(test.identifier.(*net.IPNet))
 		}
 
