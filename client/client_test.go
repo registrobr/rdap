@@ -150,7 +150,7 @@ func TestQuery(t *testing.T) {
 			http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				var b []byte
 				switch r.URL.Path {
-				case fmt.Sprintf("/%s", test.kind):
+				case fmt.Sprintf("/%s.json", test.kind):
 					t.Log(r.URL.Path)
 					b, _ = json.Marshal(test.registry)
 				case fmt.Sprintf("/%s/%v", kindToSegment[test.kind], test.identifier):
@@ -179,18 +179,18 @@ func TestQuery(t *testing.T) {
 		if len(test.bootstrapURI) > 0 {
 			c.Bootstrap = test.bootstrapURI
 		} else {
-			c.Bootstrap = ts.URL + "/%v"
+			c.Bootstrap = ts.URL + "/%s.json"
 		}
 
 		err = c.query(test.kind, test.identifier, test.object)
 
 		if test.expectedError != nil {
 			if fmt.Sprintf("%v", test.expectedError) != fmt.Sprintf("%v", err) {
-				t.Fatalf("%s: expected error %s, got %s", test.description, test.expectedError, err)
+				t.Fatalf("%s - expected error: %s, got: %s", test.description, test.expectedError, err)
 			}
 		} else {
 			if !reflect.DeepEqual(test.expected, test.object) {
-				t.Fatalf("%s: expected %v, got %v", test.description, test.expected, test.object)
+				t.Fatalf("%s - expected: %v, got: %v", test.description, test.expected, test.object)
 			}
 		}
 	}

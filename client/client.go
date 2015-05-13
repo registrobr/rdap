@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	RDAPBootstrap = "https://data.iana.org/rdap/%v.json"
+	RDAPBootstrap = "https://data.iana.org/rdap/%s.json"
 )
 
 type kind string
@@ -89,7 +89,8 @@ func (c *Client) query(kind kind, identifier interface{}, object interface{}) er
 	uris := []string{}
 	r := bootstrap.ServiceRegistry{}
 	if c.Host == "" {
-		if err := c.fetchAndUnmarshal(c.Bootstrap, &r); err != nil {
+		bootstrapURI := fmt.Sprintf(c.Bootstrap, kind)
+		if err := c.fetchAndUnmarshal(bootstrapURI, &r); err != nil {
 			return err
 		}
 
