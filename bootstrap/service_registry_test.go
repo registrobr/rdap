@@ -49,7 +49,7 @@ func TestMatchAS(t *testing.T) {
 			description: "it should match an as number",
 			as:          65411,
 			registry: ServiceRegistry{
-				Services: ServicesList{
+				Services: []Service{
 					{
 						{"2045-2045"},
 						{"https://rir3.example.com/myrdap/"},
@@ -73,7 +73,7 @@ func TestMatchAS(t *testing.T) {
 			description: "it should not match an as number due to invalid beginning of as range",
 			as:          1,
 			registry: ServiceRegistry{
-				Services: ServicesList{
+				Services: []Service{
 					{
 						{"invalid-123"},
 						{},
@@ -86,7 +86,7 @@ func TestMatchAS(t *testing.T) {
 			description: "it should not match an as number due to invalid end of as range",
 			as:          1,
 			registry: ServiceRegistry{
-				Services: ServicesList{
+				Services: []Service{
 					{
 						{"123-invalid"},
 						{},
@@ -122,7 +122,7 @@ func TestMatchIPNetwork(t *testing.T) {
 			description: "it should match an ipv6 network",
 			ipnet:       "2001:0200:1000::/48",
 			registry: ServiceRegistry{
-				Services: ServicesList{
+				Services: []Service{
 					{
 						{"2001:0200::/23", "2001:db8::/32"},
 						{"https://rir2.example.com/myrdap/"},
@@ -146,7 +146,7 @@ func TestMatchIPNetwork(t *testing.T) {
 			description: "it should match an ipv4 network",
 			ipnet:       "192.0.2.1/25",
 			registry: ServiceRegistry{
-				Services: ServicesList{
+				Services: []Service{
 					{
 						{"1.0.0.0/8", "192.0.0.0/8"},
 						{"https://rir1.example.com/myrdap/"},
@@ -169,7 +169,7 @@ func TestMatchIPNetwork(t *testing.T) {
 			description: "it should not match an ip network due to invalid cidr",
 			ipnet:       "127.0.0.1/32",
 			registry: ServiceRegistry{
-				Services: ServicesList{
+				Services: []Service{
 					{
 						{"invalid"},
 						{},
@@ -206,7 +206,7 @@ func TestMatchDomain(t *testing.T) {
 			description: "it should match a fqdn",
 			fqdn:        "a.b.example.com",
 			registry: ServiceRegistry{
-				Services: ServicesList{
+				Services: []Service{
 					{
 						{"net", "com"},
 						{"https://registry.example.com/myrdap/"},
@@ -229,7 +229,7 @@ func TestMatchDomain(t *testing.T) {
 			description: "it should match an idn",
 			fqdn:        "feijão.jabá.com",
 			registry: ServiceRegistry{
-				Services: ServicesList{
+				Services: []Service{
 					{
 						{"xn--jab-gla.com"},
 						{"https://example.com/myrdap/"},
@@ -242,7 +242,7 @@ func TestMatchDomain(t *testing.T) {
 			description: "it should match no fqdn",
 			fqdn:        "a.example.com",
 			registry: ServiceRegistry{
-				Services: ServicesList{
+				Services: []Service{
 					{
 						{"a.b.example.com"},
 						{"https://registry.example.com/myrdap/"},
@@ -266,16 +266,16 @@ func TestMatchDomain(t *testing.T) {
 	}
 }
 
-func TestValuesSort(t *testing.T) {
+func TestPrioritizeHTTPS(t *testing.T) {
 	var (
-		v  = Values{"http:", "https:"}
-		v0 = make(Values, len(v))
+		v  = PrioritizeHTTPS{"http:", "https:"}
+		v0 = make(PrioritizeHTTPS, len(v))
 	)
 
 	copy(v0, v)
 	sort.Sort(v0)
 
 	if reflect.DeepEqual(v, v0) {
-		t.Fatal("not sorting Values accordingly")
+		t.Fatal("not sorting PrioritizeHTTPS accordingly")
 	}
 }

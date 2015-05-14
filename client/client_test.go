@@ -1,7 +1,6 @@
 package client
 
 import (
-	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net"
@@ -10,356 +9,212 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/registrobr/rdap-client/bootstrap"
 	"github.com/registrobr/rdap-client/protocol"
 )
 
-type scenario struct {
-	description   string
-	bootstrapURI  string
-	kind          kind
-	identifier    interface{}
-	object        interface{}
-	registryBody  string
-	registry      *bootstrap.ServiceRegistry
-	rdapObject    interface{}
-	keepURIs      bool
-	expected      interface{}
-	expectedError error
-}
-
-func TestFetchAndUnmarshal(t *testing.T) {
+func TestFetch(t *testing.T) {
 	tests := []struct {
 		description   string
 		uri           string
-		body          string
-		expected      interface{}
+		expectedBody  string
 		expectedError error
 	}{
 		{
-			description:   "it should have an error due to parsing of an invalid JSON",
-			body:          "invalid",
-			expectedError: fmt.Errorf("invalid character 'i' looking for beginning of value"),
-		},
-		{
-			description:   "it should return an error due to parsing of an invalid URI scheme",
-			uri:           "-",
-			expectedError: fmt.Errorf("Get -: unsupported protocol scheme \"\""),
-		},
-		{
-			description:   "it should return an error due to parsing of an invalid URI",
+			description:   "it should return an error due to an invalid URI",
 			uri:           "%gh&%ij",
 			expectedError: fmt.Errorf("parse %%gh&%%ij: invalid URL escape \"%%gh\""),
 		},
-		{
-			description: "it should fetch and unmarshal a JSON",
-			body:        "{\"hello\":\"world\"}",
-			expected:    map[string]string{"hello": "world"},
-		},
 	}
 
-	for i, test := range tests {
-		ts := httptest.NewServer(
-			http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				w.Write([]byte(test.body))
-			}),
-		)
+	for _, test := range tests {
+		c := NewClient(nil, nil)
+		body := ""
+		r, err := c.fetch(test.uri)
 
-		dir, err := ioutil.TempDir("/tmp", "rdap-test")
-
-		if err != nil {
-			t.Fatal(err)
+		if err == nil {
+			content, _ := ioutil.ReadAll(r)
+			body = string(content)
 		}
-
-		c := NewClient(dir)
-		obj := make(map[string]string)
-
-		if test.uri == "" {
-			test.uri = ts.URL
-		}
-
-		err = c.fetchAndUnmarshal(test.uri, &obj)
 
 		if test.expectedError != nil {
 			if fmt.Sprintf("%v", test.expectedError) != fmt.Sprintf("%v", err) {
-				t.Fatalf("At index %d (%s): expected error %s, got %s", i, test.description, test.expectedError, err)
+				t.Fatalf("%s: expected error “%s”, got “%s”", test.description, test.expectedError, err)
 			}
 		} else {
-			if !reflect.DeepEqual(test.expected, obj) {
-				t.Fatalf("At index %d (%s): expected %v, got %v", i, test.description, test.expected, obj)
+			if !reflect.DeepEqual(test.expectedBody, body) {
+				t.Fatalf("“%s”: expected “%v”, got “%v”", test.description, test.expectedBody, body)
 			}
 		}
 	}
 }
 
 func TestQuery(t *testing.T) {
-	tests := []scenario{
+	tests := []struct {
+		description    string
+		kind           kind
+		identifier     interface{}
+		uris           []string
+		responseBody   string
+		expectedObject interface{}
+		expectedError  error
+	}{
 		{
-			description: "it should get an error when querying for a domain (invalid URI in bootstrap response)",
-			kind:        dns,
-			identifier:  "example.net",
-			object:      &protocol.DomainResponse{},
-			keepURIs:    true,
-			registry: &bootstrap.ServiceRegistry{
-				Services: bootstrap.ServicesList{
-					{
-						{"net"},
-						{"%%gh&%%ij%s", ""},
-					},
-				},
-			},
-			expectedError: fmt.Errorf("no data available for example.net"),
+			description:   "it should return an error due to an invalid uri",
+			kind:          dns,
+			identifier:    "example.br",
+			uris:          []string{"%gh&%ij"},
+			expectedError: fmt.Errorf("no data available for example.br"),
 		},
 		{
-			description: "it should get an error when querying for a domain (no matches in bootstrap response)",
-			kind:        dns,
-			identifier:  "example.com",
-			object:      &protocol.DomainResponse{},
-			registry: &bootstrap.ServiceRegistry{
-				Services: bootstrap.ServicesList{{}},
-			},
-			expectedError: fmt.Errorf("no matches for example.com"),
+			description:   "it should return an error due to invalid json in rdap response",
+			kind:          dns,
+			identifier:    "example.br",
+			responseBody:  "invalid",
+			expectedError: fmt.Errorf("no data available for example.br"),
 		},
 		{
-			description: "it should get an error when querying for an AS number (invalid ASN range)",
-			kind:        asn,
-			identifier:  uint64(1),
-			object:      &protocol.ASResponse{},
-			registry: &bootstrap.ServiceRegistry{
-				Services: bootstrap.ServicesList{
-					{
-						{"2045-invalid"},
-						{},
-					},
-				},
-			},
-			expectedError: fmt.Errorf("strconv.ParseUint: parsing \"invalid\": invalid syntax"),
-		},
-		{
-			description:   "it should get an error when querying for an object (invalid endpoint URI)",
-			kind:          asn,
-			identifier:    uint64(1),
-			object:        &protocol.ASResponse{},
-			bootstrapURI:  "&&gh&&&ij%s",
-			expectedError: fmt.Errorf("Get &&gh&&&ijasn: unsupported protocol scheme \"\""),
+			description:    "it should return a valid domain object",
+			kind:           dns,
+			identifier:     "example.br",
+			responseBody:   "{\"objectClassName\": \"domain\"}",
+			expectedObject: map[string]interface{}{"objectClassName": "domain"},
 		},
 	}
 
 	for _, test := range tests {
-		ts := httptest.NewServer(
-			http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				var b []byte
-				switch r.URL.Path {
-				case fmt.Sprintf("/%s.json", test.kind):
-					t.Log(r.URL.Path)
-					b, _ = json.Marshal(test.registry)
-				case fmt.Sprintf("/%s/%v", kindToSegment[test.kind], test.identifier):
-					t.Log(r.URL.Path)
-					b, _ = json.Marshal(test.rdapObject)
-				default:
-					t.Fatal("not expecting uri", r.URL)
-				}
+		var object interface{}
 
-				w.Write(b)
-			}),
-		)
+		c := NewClient(test.uris, nil)
 
-		if test.registry != nil && len(test.registry.Services[0][1]) > 0 && !test.keepURIs {
-			test.registry.Services[0][1][0] = ts.URL
+		if len(test.responseBody) > 0 {
+			ts := httptest.NewServer(
+				http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					w.Write([]byte(test.responseBody))
+				}),
+			)
+
+			c.uris = []string{ts.URL}
 		}
 
-		dir, err := ioutil.TempDir("/tmp", "rdap-test")
-
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		c := NewClient(dir)
-
-		if len(test.bootstrapURI) > 0 {
-			c.Bootstrap = test.bootstrapURI
-		} else {
-			c.Bootstrap = ts.URL + "/%s.json"
-		}
-
-		err = c.query(test.kind, test.identifier, test.object)
+		err := c.query(test.kind, test.identifier, &object)
 
 		if test.expectedError != nil {
 			if fmt.Sprintf("%v", test.expectedError) != fmt.Sprintf("%v", err) {
-				t.Fatalf("%s - expected error: %s, got: %s", test.description, test.expectedError, err)
+				t.Fatalf("%s: expected error “%s”, got “%s”", test.description, test.expectedError, err)
 			}
 		} else {
-			if !reflect.DeepEqual(test.expected, test.object) {
-				t.Fatalf("%s - expected: %v, got: %v", test.description, test.expected, test.object)
+			if !reflect.DeepEqual(test.expectedObject, object) {
+				t.Fatalf("“%s”: expected “%v”, got “%v”", test.description, test.expectedObject, object)
 			}
 		}
 	}
 }
 
-func TestQueryByKind(t *testing.T) {
-	tests := []scenario{
+func TestQueriers(t *testing.T) {
+	tests := []struct {
+		description    string
+		kind           kind
+		identifier     interface{}
+		uris           []string
+		responseBody   string
+		expectedObject interface{}
+		expectedError  error
+	}{
 		{
-			description: "it should get the right response when querying for a domain",
-			kind:        dns,
-			identifier:  "example.com",
-			registry: &bootstrap.ServiceRegistry{
-				Services: bootstrap.ServicesList{
-					{
-						{"com"},
-						{""},
-					},
-				},
-			},
-			rdapObject: protocol.DomainResponse{
-				ObjectClassName: "test",
-			},
-			expected: &protocol.DomainResponse{
-				ObjectClassName: "test",
-			},
+			description:    "it should return the right object when matching a domain",
+			kind:           dns,
+			identifier:     "example.br",
+			responseBody:   "{\"objectClassName\": \"domain\"}",
+			expectedObject: &protocol.DomainResponse{ObjectClassName: "domain"},
 		},
 		{
-			description: "it should get the right response when querying for an AS number",
-			kind:        asn,
-			identifier:  uint64(123),
-			registry: &bootstrap.ServiceRegistry{
-				Services: bootstrap.ServicesList{
-					{
-						{"100-200"},
-						{""},
-					},
-				},
-			},
-			rdapObject: protocol.ASResponse{
-				ObjectClassName: "test",
-			},
-			expected: &protocol.ASResponse{
-				ObjectClassName: "test",
-			},
+			description:    "it should return the right uris when matching a domain",
+			kind:           asn,
+			identifier:     uint64(1),
+			responseBody:   "{\"objectClassName\": \"as\"}",
+			expectedObject: &protocol.ASResponse{ObjectClassName: "as"},
 		},
 		{
-			description: "it should get the right response when querying for an IPv4 network",
-			kind:        ipv4,
+			description: "it should return the right uris when matching an ipv4 network",
+			kind:        ip,
 			identifier: func() *net.IPNet {
-				_, cidr, _ := net.ParseCIDR("192.0.2.1/25")
+				_, cidr, _ := net.ParseCIDR("192.168.0.0/24")
 				return cidr
 			}(),
-			registry: &bootstrap.ServiceRegistry{
-				Services: bootstrap.ServicesList{
-					{
-						{"192.0.2.0/24"},
-						{""},
-					},
-				},
-			},
-			rdapObject: protocol.IPNetwork{
-				ObjectClassName: "test",
-			},
-			expected: &protocol.IPNetwork{
-				ObjectClassName: "test",
-			},
+			responseBody:   "{\"objectClassName\": \"ipv4\"}",
+			expectedObject: &protocol.IPNetwork{ObjectClassName: "ipv4"},
 		},
 		{
-			description: "it should get the right response when querying for an IPv6 network",
-			kind:        ipv6,
+			description: "it should return the right uris when matching an ipv4 network",
+			kind:        ip,
 			identifier: func() *net.IPNet {
 				_, cidr, _ := net.ParseCIDR("2001:0200:1000::/48")
 				return cidr
 			}(),
-			registry: &bootstrap.ServiceRegistry{
-				Services: bootstrap.ServicesList{
-					{
-						{"2001:0200:1000::/36"},
-						{""},
-					},
-				},
-			},
-			rdapObject: protocol.IPNetwork{
-				ObjectClassName: "test",
-			},
-			expected: &protocol.IPNetwork{
-				ObjectClassName: "test",
-			},
+			responseBody:   "{\"objectClassName\": \"ipv6\"}",
+			expectedObject: &protocol.IPNetwork{ObjectClassName: "ipv6"},
 		},
 		{
-			description:   "it should return an error due to invalid JSON in bootstrap response when querying for a domain",
+			description:   "it should return an error when matching a domain due to an invalid uri",
 			kind:          dns,
-			identifier:    "example.com",
-			registryBody:  "invalid",
-			expectedError: fmt.Errorf("invalid character 'i' looking for beginning of value"),
+			identifier:    "example.br",
+			uris:          []string{"%gh&%ij"},
+			expectedError: fmt.Errorf("no data available for example.br"),
 		},
 		{
-			description:   "it should return an error due to invalid JSON in bootstrap response when querying for an AS number",
+			description:   "it should return an error when matching an as number due to an invalid uri",
 			kind:          asn,
 			identifier:    uint64(1),
-			registryBody:  "invalid",
-			expectedError: fmt.Errorf("invalid character 'i' looking for beginning of value"),
+			uris:          []string{"%gh&%ij"},
+			expectedError: fmt.Errorf("no data available for 1"),
 		},
 		{
-			description: "it should return an error due to invalid JSON in bootstrap response when querying for an IP network",
-			kind:        ipv4,
+			description: "it should return an error when matching an ip network due to an invalid uri",
+			kind:        ip,
 			identifier: func() *net.IPNet {
-				_, cidr, _ := net.ParseCIDR("192.0.2.1/25")
+				_, cidr, _ := net.ParseCIDR("192.168.0.0/24")
 				return cidr
 			}(),
-			registryBody:  "invalid",
-			expectedError: fmt.Errorf("invalid character 'i' looking for beginning of value"),
+			uris:          []string{"%gh&%ij"},
+			expectedError: fmt.Errorf("no data available for 192.168.0.0/24"),
 		},
 	}
 
 	for _, test := range tests {
-		ts := httptest.NewServer(
-			http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				var b []byte
-				switch r.URL.Path {
-				case fmt.Sprintf("/%s", test.kind):
-					t.Log(r.URL.Path)
-					if len(test.registryBody) > 0 {
-						b = []byte(test.registryBody)
-					} else {
-						b, _ = json.Marshal(test.registry)
-					}
-				case fmt.Sprintf("/%s/%v", kindToSegment[test.kind], test.identifier):
-					t.Log(r.URL.Path)
-					b, _ = json.Marshal(test.rdapObject)
-				default:
-					t.Fatal("not expecting uri", r.URL)
-				}
+		c := NewClient(nil, nil)
 
-				w.Write(b)
-			}),
+		if len(test.uris) == 0 {
+			ts := httptest.NewServer(
+				http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					w.Write([]byte(test.responseBody))
+				}),
+			)
+			c.uris = []string{ts.URL}
+		} else {
+			c.uris = test.uris
+		}
+
+		var (
+			object interface{}
+			err    error
 		)
-
-		if test.registry != nil && len(test.registry.Services[0][1]) > 0 && !test.keepURIs {
-			test.registry.Services[0][1][0] = ts.URL
-		}
-
-		dir, err := ioutil.TempDir("/tmp", "rdap-test")
-
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		c := NewClient(dir)
-		c.Bootstrap = ts.URL + "/%v"
-
-		var r interface{}
 
 		switch test.kind {
 		case dns:
-			r, err = c.QueryDomain(test.identifier.(string))
+			object, err = c.Domain(test.identifier.(string))
 		case asn:
-			r, err = c.QueryASN(test.identifier.(uint64))
-		case ipv4, ipv6:
-			r, err = c.QueryIPNetwork(test.identifier.(*net.IPNet))
+			object, err = c.ASN(test.identifier.(uint64))
+		case ip:
+			object, err = c.IPNetwork(test.identifier.(*net.IPNet))
 		}
 
 		if test.expectedError != nil {
 			if fmt.Sprintf("%v", test.expectedError) != fmt.Sprintf("%v", err) {
-				t.Fatalf("%s: expected error %s, got %s", test.description, test.expectedError, err)
+				t.Fatalf("%s: expected error “%s”, got “%s”", test.description, test.expectedError, err)
 			}
 		} else {
-			if !reflect.DeepEqual(test.expected, r) {
-				t.Fatalf("%s: expected %v, got %v", test.description, test.expected, r)
+			if !reflect.DeepEqual(test.expectedObject, object) {
+				t.Fatalf("“%s”: expected “%v”, got “%v”", test.description, test.expectedObject, object)
 			}
 		}
 	}
