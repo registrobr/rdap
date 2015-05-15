@@ -9,7 +9,7 @@ import (
 // Registry.
 //
 // See http://tools.ietf.org/html/rfc7484#section-10.2
-type ServiceRegistry struct {
+type serviceRegistry struct {
 	Version     string    `json:"version"`
 	Publication time.Time `json:"publication"`
 	Description string    `json:"description,omitempty"`

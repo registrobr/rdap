@@ -51,7 +51,7 @@ func (c *Client) IPNetwork(ipnet *net.IPNet) ([]string, error) {
 
 func (c *Client) query(kind kind, identifier interface{}) ([]string, error) {
 	uris := []string{}
-	r := ServiceRegistry{}
+	r := serviceRegistry{}
 	uri := fmt.Sprintf(c.Bootstrap, kind)
 	body, err := c.fetch(uri)
 
