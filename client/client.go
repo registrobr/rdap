@@ -6,7 +6,9 @@ import (
 	"io"
 	"net"
 	"net/http"
+	"strings"
 
+	"github.com/registrobr/rdap-client/Godeps/_workspace/src/github.com/miekg/dns/idn"
 	"github.com/registrobr/rdap-client/protocol"
 )
 
@@ -32,6 +34,7 @@ func NewClient(uris []string, httpClient *http.Client) *Client {
 
 func (c *Client) Domain(fqdn string) (*protocol.DomainResponse, error) {
 	r := &protocol.DomainResponse{}
+	fqdn = strings.ToLower(idn.ToPunycode(fqdn))
 
 	if err := c.query(dns, fqdn, r); err != nil {
 		return nil, err
