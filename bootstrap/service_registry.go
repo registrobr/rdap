@@ -5,6 +5,8 @@ import (
 	"time"
 )
 
+const version = "1.0"
+
 // ServiceRegistry reflects the structure of a RDAP Bootstrap Service
 // Registry.
 //
