@@ -51,7 +51,7 @@ func (c *Client) IPNetwork(ipnet *net.IPNet) ([]string, error) {
 
 func (c *Client) query(kind kind, identifier interface{}) ([]string, error) {
 	uris := []string{}
-	r := ServiceRegistry{}
+	r := serviceRegistry{}
 	uri := fmt.Sprintf(c.Bootstrap, kind)
 	body, err := c.fetch(uri)
 
@@ -82,7 +82,7 @@ func (c *Client) query(kind kind, identifier interface{}) ([]string, error) {
 		return nil, fmt.Errorf("no matches for %v", identifier)
 	}
 
-	sort.Sort(PrioritizeHTTPS(uris))
+	sort.Sort(prioritizeHTTPS(uris))
 
 	return uris, nil
 }
