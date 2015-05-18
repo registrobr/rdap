@@ -1,6 +1,7 @@
 package output
 
 import (
+	"errors"
 	"testing"
 	"time"
 
@@ -140,5 +141,20 @@ func TestASToText(t *testing.T) {
 		t.Error("Wrong output")
 		t.Log(string(w.Content))
 		return
+	}
+}
+
+func TestAsToTextWithErrorOnWriter(t *testing.T) {
+	dummyErr := errors.New("Dummy Error!")
+	w := &WriterMock{
+		Err: dummyErr,
+	}
+
+	as := AS{
+		AS: new(protocol.ASResponse),
+	}
+
+	if err := as.ToText(w); err == nil {
+		t.Fatal("Expecting an error")
 	}
 }
