@@ -1,12 +1,61 @@
 package output
 
 import (
-	"os"
 	"testing"
 	"time"
 
 	"github.com/registrobr/rdap-client/protocol"
 )
+
+var TestAsToTextOutput = `aut-num:     a_123456-NICBR
+owner:       (name)
+ownerid:     (CPF/CNPJ)
+responsible: (name)
+address:     
+address:     
+country:     BR
+phone:       
+owner-c:     (handle)
+routing-c:   (handle)
+abuse-c:     (handle)
+created:     2015-03-01T12:00:00Z
+changed:     2015-03-10T14:00:00Z
+
+inetnum:     (ip networks)
+
+
+nic-hdl-br: XXXX
+person: Joe User
+e-mail: joe.user@example.com
+address:  Av Naçoes Unidas 11541 7 andar Sao Paulo SP 04578-000 BR
+phone: tel:+55-11-5509-3506;ext=3506
+created: 2015-03-01T12:00:00Z
+changed: 2015-03-10T14:00:00Z
+
+nic-hdl-br: YYYY
+person: Joe User 2
+e-mail: joe.user2@example.com
+address:  Av Naçoes Unidas 11541 7 andar Sao Paulo SP 04578-000 BR
+phone: tel:+55-11-5509-3506;ext=3507
+created: 2015-03-01T12:00:00Z
+changed: 2015-03-10T14:00:00Z
+`
+
+type WriterMock struct {
+	Content []byte
+	Err     error
+
+	MockWrite func(p []byte) (n int, err error)
+}
+
+func (w *WriterMock) Write(p []byte) (n int, err error) {
+	if w.MockWrite != nil {
+		return w.MockWrite(p)
+	}
+
+	w.Content = append(w.Content, p...)
+	return len(p), w.Err
+}
 
 func TestASToText(t *testing.T) {
 	asResponse := protocol.ASResponse{
@@ -44,7 +93,6 @@ func TestASToText(t *testing.T) {
 						[]interface{}{"tel", struct{ Type string }{Type: "work"}, "uri", "tel:+55-11-5509-3506;ext=3506"},
 					},
 				},
-				Roles: []string{"registrant"},
 				Events: []protocol.Event{
 					protocol.Event{Action: protocol.EventActionRegistration, Actor: "", Date: time.Date(2015, 03, 01, 12, 00, 00, 00, time.UTC)},
 					protocol.Event{Action: protocol.EventActionLastChanged, Actor: "", Date: time.Date(2015, 03, 10, 14, 00, 00, 00, time.UTC)},
@@ -69,7 +117,6 @@ func TestASToText(t *testing.T) {
 						[]interface{}{"tel", struct{ Type string }{Type: "work"}, "uri", "tel:+55-11-5509-3506;ext=3507"},
 					},
 				},
-				Roles: []string{"registrant"},
 				Events: []protocol.Event{
 					protocol.Event{Action: protocol.EventActionRegistration, Actor: "", Date: time.Date(2015, 03, 01, 12, 00, 00, 00, time.UTC)},
 					protocol.Event{Action: protocol.EventActionLastChanged, Actor: "", Date: time.Date(2015, 03, 10, 14, 00, 00, 00, time.UTC)},
@@ -83,5 +130,15 @@ func TestASToText(t *testing.T) {
 	}
 
 	asOutput := AS{AS: &asResponse}
-	asOutput.ToText(os.Stdout)
+
+	var w WriterMock
+	if err := asOutput.ToText(&w); err != nil {
+		t.Fatal(err)
+	}
+
+	if string(w.Content) != TestAsToTextOutput {
+		t.Error("Wrong output")
+		t.Log(string(w.Content))
+		return
+	}
 }
