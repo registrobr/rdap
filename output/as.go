@@ -40,61 +40,61 @@ func (a *AS) setDates() {
 	}
 }
 
-func (a *AS) setContact() {
-	a.ContactsInfos = make([]ContactInfo, 0, len(a.AS.Entities))
-	for _, entity := range a.AS.Entities {
-		var contactInfo ContactInfo
+func (c *ContactInfo) setContact(entity protocol.Entity) {
+	c.Handle = entity.Handle
+	for _, vCardValues := range entity.VCardArray {
+		if _, ok := vCardValues.([]interface{}); !ok {
+			continue
+		}
 
-		contactInfo.Handle = entity.Handle
-		for _, vCardValues := range entity.VCardArray {
-			if _, ok := vCardValues.([]interface{}); !ok {
-				continue
-			}
+		vCardValue, ok := vCardValues.([]interface{})
+		if !ok {
+			continue
+		}
 
-			vCardValue, ok := vCardValues.([]interface{})
+		for _, value := range vCardValue {
+			v, ok := value.([]interface{})
 			if !ok {
 				continue
 			}
 
-			for _, value := range vCardValue {
-				v, ok := value.([]interface{})
-				if !ok {
-					continue
+			switch v[0] {
+			case "fn":
+				c.Person = v[3].(string)
+			case "email":
+				c.Email = v[3].(string)
+			case "adr":
+				for _, v := range v[3].([]string) {
+					c.Address += " " + v
 				}
-
-				switch v[0] {
-				case "fn":
-					contactInfo.Person = v[3].(string)
-				case "email":
-					contactInfo.Email = v[3].(string)
-				case "adr":
-					for _, v := range v[3].([]string) {
-						contactInfo.Address += " " + v
-					}
-				case "tel":
-					contactInfo.Phone = v[3].(string)
-				}
+			case "tel":
+				c.Phone = v[3].(string)
 			}
 		}
-
-		for _, event := range entity.Events {
-			date := event.Date.Format(time.RFC3339)
-
-			switch event.Action {
-			case protocol.EventActionRegistration:
-				contactInfo.ContactCreatedAt = date
-			case protocol.EventActionLastChanged:
-				contactInfo.ContactUpdatedAt = date
-			}
-		}
-
-		a.ContactsInfos = append(a.ContactsInfos, contactInfo)
 	}
+
+	for _, event := range entity.Events {
+		date := event.Date.Format(time.RFC3339)
+
+		switch event.Action {
+		case protocol.EventActionRegistration:
+			c.ContactCreatedAt = date
+		case protocol.EventActionLastChanged:
+			c.ContactUpdatedAt = date
+		}
+	}
+
 }
 
 func (a *AS) ToText(wr io.Writer) error {
 	a.setDates()
-	a.setContact()
+
+	a.ContactsInfos = make([]ContactInfo, 0, len(a.AS.Entities))
+	for _, entity := range a.AS.Entities {
+		var c ContactInfo
+		c.setContact(entity)
+		a.ContactsInfos = append(a.ContactsInfos, c)
+	}
 
 	t, err := template.New("as template").Parse(asTmpl)
 	if err != nil {
