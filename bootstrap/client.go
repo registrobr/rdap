@@ -65,6 +65,10 @@ func (c *Client) query(kind kind, identifier interface{}) ([]string, error) {
 		return nil, err
 	}
 
+	if r.Version != version {
+		return nil, fmt.Errorf("incompatible bootstrap specification version: %s (expecting %s)", r.Version, version)
+	}
+
 	switch kind {
 	case dns:
 		uris, err = r.MatchDomain(identifier.(string))
@@ -82,7 +86,7 @@ func (c *Client) query(kind kind, identifier interface{}) ([]string, error) {
 		return nil, fmt.Errorf("no matches for %v", identifier)
 	}
 
-	sort.Sort(PrioritizeHTTPS(uris))
+	sort.Sort(prioritizeHTTPS(uris))
 
 	return uris, nil
 }

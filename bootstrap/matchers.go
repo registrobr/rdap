@@ -17,7 +17,7 @@ func (s serviceRegistry) MatchAS(asn uint64) (uris []string, err error) {
 	var size uint64 = math.MaxUint32
 
 	for _, service := range s.Services {
-		for _, entry := range service.Entries() {
+		for _, entry := range service.entries() {
 			asRange := strings.Split(entry, "-")
 			begin, err := strconv.ParseUint(asRange[0], 10, 32)
 
@@ -33,7 +33,7 @@ func (s serviceRegistry) MatchAS(asn uint64) (uris []string, err error) {
 
 			if diff := end - begin; asn >= begin && asn <= end && diff < size {
 				size = diff
-				uris = service.URIs()
+				uris = service.uris()
 			}
 		}
 	}
@@ -50,7 +50,7 @@ func (s serviceRegistry) MatchIPNetwork(network *net.IPNet) (uris []string, err 
 	size := 0
 
 	for _, service := range s.Services {
-		for _, entry := range service.Entries() {
+		for _, entry := range service.entries() {
 			_, ipnet, err := net.ParseCIDR(entry)
 
 			if err != nil {
@@ -65,7 +65,7 @@ func (s serviceRegistry) MatchIPNetwork(network *net.IPNet) (uris []string, err 
 				}
 
 				if mask, _ := ipnet.Mask.Size(); ipnet.Contains(lastIP) && mask > size {
-					uris = service.URIs()
+					uris = service.uris()
 					size = mask
 				}
 			}
@@ -87,7 +87,7 @@ func (s serviceRegistry) MatchDomain(fqdn string) (uris []string, err error) {
 
 	for _, service := range s.Services {
 	Entries:
-		for _, entry := range service.Entries() {
+		for _, entry := range service.entries() {
 			entryParts := strings.Split(entry, ".")
 
 			if len(fqdnParts) < len(entryParts) {
@@ -103,7 +103,7 @@ func (s serviceRegistry) MatchDomain(fqdn string) (uris []string, err error) {
 			}
 
 			if longest := len(entryParts); longest > size {
-				uris = service.URIs()
+				uris = service.uris()
 				size = longest
 			}
 		}

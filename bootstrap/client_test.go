@@ -74,14 +74,14 @@ func TestQuery(t *testing.T) {
 			description:  "it should return the right uris when matching a domain",
 			kind:         dns,
 			identifier:   "example.br",
-			responseBody: "{\"services\":[[[\"br\"], [\"rdap-domain.example.br\"]]]}",
+			responseBody: "{\"version\":\"1.0\",\"services\":[[[\"br\"], [\"rdap-domain.example.br\"]]]}",
 			expectedURIs: []string{"rdap-domain.example.br"},
 		},
 		{
 			description:  "it should return the right uris when matching an as number",
 			kind:         asn,
 			identifier:   uint64(5),
-			responseBody: "{\"services\":[[[\"1-10\"], [\"rdap-as.example.br\"]]]}",
+			responseBody: "{\"version\":\"1.0\",\"services\":[[[\"1-10\"], [\"rdap-as.example.br\"]]]}",
 			expectedURIs: []string{"rdap-as.example.br"},
 		},
 		{
@@ -91,22 +91,29 @@ func TestQuery(t *testing.T) {
 				_, cidr, _ := net.ParseCIDR("192.168.0.0/24")
 				return cidr
 			}(),
-			responseBody: "{\"services\":[[[\"192.168.0.0/16\"], [\"rdap-ip.example.br\"]]]}",
+			responseBody: "{\"version\":\"1.0\",\"services\":[[[\"192.168.0.0/16\"], [\"rdap-ip.example.br\"]]]}",
 			expectedURIs: []string{"rdap-ip.example.br"},
 		},
 		{
 			description:  "it should return no uris when matching a domain",
 			kind:         dns,
 			identifier:   "example.br",
-			responseBody: "{\"services\":[[[\"net\"], [\"rdap-domain.example.net\"]]]}",
+			responseBody: "{\"version\":\"1.0\",\"services\":[[[\"net\"], [\"rdap-domain.example.net\"]]]}",
 			expectedURIs: nil,
 		},
 		{
 			description:  "it should return an error due to an invalid as range",
 			kind:         asn,
 			identifier:   uint64(1),
-			responseBody: "{\"services\":[[[\"1-invalid\"], [\"rdap-as.example.net\"]]]}",
+			responseBody: "{\"version\":\"1.0\",\"services\":[[[\"1-invalid\"], [\"rdap-as.example.net\"]]]}",
 			expectedURIs: nil,
+		},
+		{
+			description:   "it should return an error due to incompatible bootstrap spec version",
+			kind:          asn,
+			identifier:    uint64(1),
+			responseBody:  "{\"version\":\"2.0\",\"services\":[[[\"1-invalid\"], [\"rdap-as.example.net\"]]]}",
+			expectedError: fmt.Errorf("incompatible bootstrap specification version: 2.0 (expecting 1.0)"),
 		},
 	}
 
@@ -165,14 +172,14 @@ func TestQueriers(t *testing.T) {
 			description:  "it should return the right uris when matching a domain",
 			kind:         dns,
 			identifier:   "example.br",
-			responseBody: "{\"services\":[[[\"br\"], [\"rdap-domain.example.br\"]]]}",
+			responseBody: "{\"version\":\"1.0\",\"services\":[[[\"br\"], [\"rdap-domain.example.br\"]]]}",
 			expectedURIs: []string{"rdap-domain.example.br"},
 		},
 		{
 			description:  "it should return the right uris when matching a domain",
 			kind:         asn,
 			identifier:   uint64(1),
-			responseBody: "{\"services\":[[[\"1-10\"], [\"rdap-as.example.br\"]]]}",
+			responseBody: "{\"version\":\"1.0\",\"services\":[[[\"1-10\"], [\"rdap-as.example.br\"]]]}",
 			expectedURIs: []string{"rdap-as.example.br"},
 		},
 		{
@@ -182,7 +189,7 @@ func TestQueriers(t *testing.T) {
 				_, cidr, _ := net.ParseCIDR("192.168.0.0/24")
 				return cidr
 			}(),
-			responseBody: "{\"services\":[[[\"192.168.0.0/16\"], [\"rdap-ip.example.br\"]]]}",
+			responseBody: "{\"version\":\"1.0\",\"services\":[[[\"192.168.0.0/16\"], [\"rdap-ip.example.br\"]]]}",
 			expectedURIs: []string{"rdap-ip.example.br"},
 		},
 		{
@@ -192,7 +199,7 @@ func TestQueriers(t *testing.T) {
 				_, cidr, _ := net.ParseCIDR("2001:0200:1000::/48")
 				return cidr
 			}(),
-			responseBody: "{\"services\":[[[\"2001:0200:1000::/36\"], [\"rdap-ip.example.br\"]]]}",
+			responseBody: "{\"version\":\"1.0\",\"services\":[[[\"2001:0200:1000::/36\"], [\"rdap-ip.example.br\"]]]}",
 			expectedURIs: []string{"rdap-ip.example.br"},
 		},
 	}
