@@ -89,8 +89,14 @@ func (c *ContactInfo) setContact(entity protocol.Entity) {
 func (a *AS) ToText(wr io.Writer) error {
 	a.setDates()
 
+	contacts := make(map[string]bool)
 	a.ContactsInfos = make([]ContactInfo, 0, len(a.AS.Entities))
 	for _, entity := range a.AS.Entities {
+		if contacts[entity.Handle] == true {
+			continue
+		}
+		contacts[entity.Handle] = true
+
 		var c ContactInfo
 		c.setContact(entity)
 		a.ContactsInfos = append(a.ContactsInfos, c)
