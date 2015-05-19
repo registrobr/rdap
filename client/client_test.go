@@ -81,7 +81,7 @@ func TestQuery(t *testing.T) {
 		},
 	}
 
-	for _, test := range tests {
+	for i, test := range tests {
 		var object interface{}
 
 		c := NewClient(test.uris, nil)
@@ -98,6 +98,7 @@ func TestQuery(t *testing.T) {
 
 		err := c.query(test.kind, test.identifier, &object)
 
+		t.Log("Got an error in test case number:", i)
 		if test.expectedError != nil {
 			if fmt.Sprintf("%v", test.expectedError) != fmt.Sprintf("%v", err) {
 				t.Fatalf("%s: expected error “%s”, got “%s”", test.description, test.expectedError, err)
@@ -180,7 +181,7 @@ func TestQueriers(t *testing.T) {
 		},
 	}
 
-	for _, test := range tests {
+	for i, test := range tests {
 		c := NewClient(nil, nil)
 
 		if len(test.uris) == 0 {
@@ -208,6 +209,7 @@ func TestQueriers(t *testing.T) {
 			object, err = c.IPNetwork(test.identifier.(*net.IPNet))
 		}
 
+		t.Log("Got an error in test case number:", i)
 		if test.expectedError != nil {
 			if fmt.Sprintf("%v", test.expectedError) != fmt.Sprintf("%v", err) {
 				t.Fatalf("%s: expected error “%s”, got “%s”", test.description, test.expectedError, err)
