@@ -9,7 +9,7 @@ import (
 
 var TestEntityToTextOutput = `owner:       Joe User
 ownerid:     (CPF/CNPJ)
-responsible: 
+responsible: Joe User
 address:      Av Naçoes Unidas 11541 7 andar Sao Paulo SP 04578-000 BR
 country:     
 phone:       tel:+55-11-5509-3506;ext=3506
@@ -46,7 +46,7 @@ func TestEntityToText(t *testing.T) {
 				[]interface{}{"tel", struct{ Type string }{Type: "work"}, "uri", "tel:+55-11-5509-3506;ext=3506"},
 			},
 		},
-		Responsible: "",
+		Responsible: "Joe User",
 		Entities: []protocol.Entity{
 			{
 				ObjectClassName: "entity",

@@ -2,7 +2,7 @@ package output
 
 var entityTmpl = `owner:       {{.ContactInfo.Person}}
 ownerid:     (CPF/CNPJ)
-responsible: 
+responsible: {{.Entity.Responsible}}
 address:     {{.ContactInfo.Address}}
 country:     
 phone:       {{.ContactInfo.Phone}}
