@@ -2,6 +2,7 @@ package client
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net"
@@ -15,10 +16,13 @@ import (
 type kind string
 
 const (
-	dns kind = "domain"
-	asn kind = "autnum"
-	ip  kind = "ip"
+	dns    kind = "domain"
+	asn    kind = "autnum"
+	ip     kind = "ip"
+	entity kind = "entity"
 )
+
+var SERVER_RETURNED_NOT_200 error = errors.New("The HTTP status code returned from server is not 200 OK!")
 
 type Client struct {
 	httpClient *http.Client
@@ -36,7 +40,12 @@ func (c *Client) Domain(fqdn string) (*protocol.DomainResponse, error) {
 	r := &protocol.DomainResponse{}
 	fqdn = strings.ToLower(idn.ToPunycode(fqdn))
 
-	if err := c.query(dns, fqdn, r); err != nil {
+	err := c.query(dns, fqdn, r)
+	if err != nil {
+		if err == SERVER_RETURNED_NOT_200 {
+			// TODO - handle http status code returned from server properly
+			return nil, nil
+		}
 		return nil, err
 	}
 
@@ -47,6 +56,16 @@ func (c *Client) ASN(as uint64) (*protocol.ASResponse, error) {
 	r := &protocol.ASResponse{}
 
 	if err := c.query(asn, as, r); err != nil {
+		return nil, err
+	}
+
+	return r, nil
+}
+
+func (c *Client) Entity(identifier string) (*protocol.Entity, error) {
+	r := &protocol.Entity{}
+
+	if err := c.query(entity, identifier, r); err != nil {
 		return nil, err
 	}
 
@@ -73,22 +92,27 @@ func (c *Client) IP(netIP net.IP) (*protocol.IPNetwork, error) {
 	return r, nil
 }
 
-func (c *Client) query(kind kind, identifier interface{}, object interface{}) error {
+func (c *Client) query(kind kind, identifier interface{}, object interface{}) (err error) {
 	for _, uri := range c.uris {
 		uri := fmt.Sprintf("%s/%s/%v", uri, kind, identifier)
-		body, err := c.fetch(uri)
+
+		var body io.ReadCloser
+		body, err = c.fetch(uri)
 
 		if err != nil {
 			continue
 		}
 
 		defer body.Close()
-
-		if err := json.NewDecoder(body).Decode(&object); err != nil {
+		if err = json.NewDecoder(body).Decode(&object); err != nil {
 			continue
 		}
 
-		return nil
+		return err
+	}
+
+	if err != nil {
+		return err
 	}
 
 	return fmt.Errorf("no data available for %v", identifier)
@@ -109,6 +133,11 @@ func (c *Client) fetch(uri string) (io.ReadCloser, error) {
 
 	if err != nil {
 		return nil, err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		// TODO - handle the error properly
+		return resp.Body, SERVER_RETURNED_NOT_200
 	}
 
 	return resp.Body, nil
