@@ -63,6 +63,16 @@ func (c *Client) IPNetwork(ipnet *net.IPNet) (*protocol.IPNetwork, error) {
 	return r, nil
 }
 
+func (c *Client) IP(netIP net.IP) (*protocol.IPNetwork, error) {
+	r := &protocol.IPNetwork{}
+
+	if err := c.query(ip, netIP, r); err != nil {
+		return nil, err
+	}
+
+	return r, nil
+}
+
 func (c *Client) query(kind kind, identifier interface{}, object interface{}) error {
 	for _, uri := range c.uris {
 		uri := fmt.Sprintf("%s/%s/%v", uri, kind, identifier)

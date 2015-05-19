@@ -49,6 +49,16 @@ func (c *Client) IPNetwork(ipnet *net.IPNet) ([]string, error) {
 	return c.query(kind, ipnet)
 }
 
+func (c *Client) IP(ip net.IP) ([]string, error) {
+	kind := ipv4
+
+	if ip.To4() == nil {
+		kind = ipv6
+	}
+
+	return c.query(kind, ip)
+}
+
 func (c *Client) query(kind kind, identifier interface{}) ([]string, error) {
 	uris := []string{}
 	r := serviceRegistry{}
@@ -75,7 +85,14 @@ func (c *Client) query(kind kind, identifier interface{}) ([]string, error) {
 	case asn:
 		uris, err = r.MatchAS(identifier.(uint64))
 	case ipv4, ipv6:
-		uris, err = r.MatchIPNetwork(identifier.(*net.IPNet))
+		if ip, ok := identifier.(net.IP); ok {
+			uris, err = r.MatchIP(ip)
+			break
+		}
+		if ipNet, ok := identifier.(*net.IPNet); ok {
+			uris, err = r.MatchIPNetwork(ipNet)
+			break
+		}
 	}
 
 	if err != nil {

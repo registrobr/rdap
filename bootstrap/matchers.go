@@ -75,6 +75,29 @@ func (s serviceRegistry) MatchIPNetwork(network *net.IPNet) (uris []string, err 
 	return uris, nil
 }
 
+// MatchIP iterates through a list of services looking for the more
+// specific IP network to which the IP belongs.
+//
+// See http://tools.ietf.org/html/rfc7484#section-5.1
+//     http://tools.ietf.org/html/rfc7484#section-5.2
+func (s serviceRegistry) MatchIP(ip net.IP) (uris []string, err error) {
+	for _, service := range s.Services {
+		for _, entry := range service.entries() {
+			_, ipNet, err := net.ParseCIDR(entry)
+
+			if err != nil {
+				return nil, err
+			}
+
+			if ipNet.Contains(ip) {
+				return service.uris(), nil
+			}
+		}
+	}
+
+	return nil, nil
+}
+
 // MatchDomain iterates through a list of services looking for the label-wise
 // longest match of the target domain name "fqdn".
 //
