@@ -8,31 +8,46 @@ import (
 	"github.com/registrobr/rdap-client/protocol"
 )
 
-type domain struct {
-	Domain       *protocol.DomainResponse
-	Registration string
-	Updated      string
-	Expiration   string
+type Domain struct {
+	Domain *protocol.DomainResponse
+
+	CreatedAt string
+	UpdatedAt string
+	ExpiresAt string
+
+	ContactsInfos []ContactInfo
 }
 
-func (d *domain) transform() {
-	for _, event := range d.Domain.Events {
-		date := event.Date.Format(time.RFC3339)
+func (d *Domain) setDates() {
+	for _, e := range d.Domain.Events {
+		date := e.Date.Format(time.RFC3339)
 
-		switch event.Action {
+		switch e.Action {
 		case protocol.EventActionRegistration:
-			d.Registration = date
+			d.CreatedAt = date
 		case protocol.EventActionLastChanged:
-			d.Updated = date
+			d.UpdatedAt = date
 		case protocol.EventActionExpiration:
-			d.Expiration = date
+			d.ExpiresAt = date
 		}
 	}
 }
 
-func PrintDomain(r *protocol.DomainResponse, wr io.Writer) error {
-	d := domain{Domain: r}
-	d.transform()
+func (d *Domain) ToText(wr io.Writer) error {
+	d.setDates()
+
+	contacts := make(map[string]bool)
+	d.ContactsInfos = make([]ContactInfo, 0, len(d.Domain.Entities))
+	for _, entity := range d.Domain.Entities {
+		if contacts[entity.Handle] == true {
+			continue
+		}
+		contacts[entity.Handle] = true
+
+		var c ContactInfo
+		c.setContact(entity)
+		d.ContactsInfos = append(d.ContactsInfos, c)
+	}
 
 	t, err := template.New("domain").Parse(domainTmpl)
 

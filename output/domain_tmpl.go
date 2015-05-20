@@ -2,9 +2,9 @@ package output
 
 const domainTmpl = `Domain Name: {{.Domain.LDHName}}
 Domain ID: {{.Domain.LDHName}}
-Creation Date: {{.Registration}}
-Updated Date: {{.Updated}}
-Registry Expiry Date: {{.Expiration}}
+Creation Date: {{.CreatedAt}}
+Updated Date: {{.UpdatedAt}}
+Registry Expiry Date: {{.ExpiresAt}}
 Trademark Name:
 Trademark Date:
 Trademark Country:
