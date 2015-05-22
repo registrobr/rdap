@@ -42,6 +42,7 @@ func (i *IPNetwork) ToText(wr io.Writer) error {
 		contacts[entity.Handle] = true
 
 		var c ContactInfo
+		c.Handle = entity.Handle
 		c.setContact(entity)
 		i.ContactsInfos = append(i.ContactsInfos, c)
 	}

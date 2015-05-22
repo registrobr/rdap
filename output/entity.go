@@ -44,6 +44,7 @@ func (e *Entity) ToText(wr io.Writer) error {
 		contacts[entity.Handle] = true
 
 		var c ContactInfo
+		c.Handle = entity.Handle
 		c.setContact(entity)
 		e.ContactsInfos = append(e.ContactsInfos, c)
 	}

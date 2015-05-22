@@ -24,19 +24,18 @@ changed:     2015-03-10T14:00:00Z
 
 inetnum:     (ip networks)
 
-
 nic-hdl-br: XXXX
 person: Joe User
 e-mail: joe.user@example.com
-address:  Av Naçoes Unidas 11541 7 andar Sao Paulo SP 04578-000 BR
+address: Av Naçoes Unidas, 11541, 7 andar, Sao Paulo, SP, 04578-000, BR
 phone: tel:+55-11-5509-3506;ext=3506
 created: 2015-03-01T12:00:00Z
 changed: 2015-03-10T14:00:00Z
-
+q
 nic-hdl-br: YYYY
 person: Joe User 2
 e-mail: joe.user2@example.com
-address:  Av Naçoes Unidas 11541 7 andar Sao Paulo SP 04578-000 BR
+address: Av Naçoes Unidas, 11541, 7 andar, Sao Paulo, SP, 04578-000, BR
 phone: tel:+55-11-5509-3506;ext=3507
 created: 2015-03-01T12:00:00Z
 changed: 2015-03-10T14:00:00Z
@@ -138,9 +137,9 @@ func TestASToText(t *testing.T) {
 	}
 
 	if string(w.Content) != TestAsToTextOutput {
-		t.Error("Wrong output")
-		t.Log(string(w.Content))
-		return
+		for _, l := range diff(TestAsToTextOutput, string(w.Content)) {
+			t.Log(l)
+		}
 	}
 }
 

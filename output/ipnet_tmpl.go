@@ -24,12 +24,13 @@ nsstat:
 nslastaa:    
 created:     {{.CreatedAt}}
 changed:     {{.UpdatedAt}}
-{{range .ContactsInfos}}
-nic-hdl-br: {{.Handle}}
-person: {{.Person}}
-e-mail: {{.Email}}
-address: {{.Address}}
-phone: {{.Phone}}
-created: {{.ContactCreatedAt}}
-changed: {{.ContactUpdatedAt}}
+
+{{range .ContactsInfos}}nic-hdl-br: {{.Handle}}
+{{range .Persons}}person: {{.}}
+{{end}}{{range .Emails}}e-mail: {{.}}
+{{end}}{{range .Addresses}}address: {{.}}
+{{end}}{{range .Phones}}phone: {{.}}
+{{end}}created: {{.CreatedAt}}
+changed: {{.UpdatedAt}}
+
 {{end}}`

@@ -10,7 +10,7 @@ import (
 var TestEntityToTextOutput = `owner:       Joe User
 ownerid:     (CPF/CNPJ)
 responsible: Joe User
-address:      Av Naçoes Unidas 11541 7 andar Sao Paulo SP 04578-000 BR
+address:      Av Naçoes Unidas, 11541, 7 andar, Sao Paulo, SP, 04578-000, BR
 country:     
 phone:       tel:+55-11-5509-3506;ext=3506
 owner-c:     XXXX
@@ -20,7 +20,7 @@ changed:     2015-03-10T14:00:00Z
 nic-hdl-br: XXXX
 person: Joe User
 e-mail: joe.user@example.com
-address:  Av Naçoes Unidas 11541 7 andar Sao Paulo SP 04578-000 BR
+address: Av Naçoes Unidas, 11541, 7 andar, Sao Paulo, SP, 04578-000, BR
 phone: tel:+55-11-5509-3506;ext=3506
 created: 2015-03-01T12:00:00Z
 changed: 2015-03-10T14:00:00Z
@@ -87,8 +87,8 @@ func TestEntityToText(t *testing.T) {
 	}
 
 	if string(w.Content) != TestEntityToTextOutput {
-		t.Error("Wrong output")
-		t.Log(string(w.Content))
-		return
+		for _, l := range diff(TestEntityToTextOutput, string(w.Content)) {
+			t.Log(l)
+		}
 	}
 }

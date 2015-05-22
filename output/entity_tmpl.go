@@ -1,20 +1,21 @@
 package output
 
-var entityTmpl = `owner:       {{.ContactInfo.Person}}
-ownerid:     (CPF/CNPJ)
+var entityTmpl = `{{range .ContactInfo.Persons}}
+owner:       {{.}}
+{{end}}ownerid:     (CPF/CNPJ)
 responsible: {{.Entity.Responsible}}
-address:     {{.ContactInfo.Address}}
-country:     
-phone:       {{.ContactInfo.Phone}}
+{{range .ContactInfo.Addresses}}address:     {{.}}
+{{end}}{{range .ContactInfo.Phones}}phone:     {{.}}
+{{end}}
 owner-c:     {{.Entity.Handle}}
 created:     {{.CreatedAt}}
 changed:     {{.UpdatedAt}}
-{{range .ContactsInfos}}
-nic-hdl-br: {{.Handle}}
-person: {{.Person}}
-e-mail: {{.Email}}
-address: {{.Address}}
-phone: {{.Phone}}
-created: {{.ContactCreatedAt}}
-changed: {{.ContactUpdatedAt}}
+
+{{range .ContactsInfos}}nic-hdl-br: {{.Handle}}
+{{range .Persons}}person: {{.}}
+{{end}}{{range .Emails}}e-mail: {{.}}
+{{end}}{{range .Addresses}}address: {{.}}
+{{end}}{{range .Phones}}phone: {{.}}
+{{end}}created: {{.CreatedAt}}
+changed: {{.UpdatedAt}}
 {{end}}`
