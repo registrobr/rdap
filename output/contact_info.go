@@ -18,6 +18,7 @@ type ContactInfo struct {
 }
 
 func (c *ContactInfo) setContact(entity protocol.Entity) {
+	c.Handle = entity.Handle
 	for _, vCardValues := range entity.VCardArray {
 		vCardValue, ok := vCardValues.([]interface{})
 		if !ok {
