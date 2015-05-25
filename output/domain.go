@@ -18,6 +18,10 @@ type Domain struct {
 	ContactsInfos []ContactInfo
 }
 
+func (d *Domain) AddContact(c ContactInfo) {
+	d.ContactsInfos = append(d.ContactsInfos, c)
+}
+
 func (d *Domain) setDates() {
 	for _, e := range d.Domain.Events {
 		date := e.Date.Format(time.RFC3339)
@@ -35,19 +39,7 @@ func (d *Domain) setDates() {
 
 func (d *Domain) ToText(wr io.Writer) error {
 	d.setDates()
-
-	contacts := make(map[string]bool)
-	d.ContactsInfos = make([]ContactInfo, 0, len(d.Domain.Entities))
-	for _, entity := range d.Domain.Entities {
-		if contacts[entity.Handle] == true {
-			continue
-		}
-		contacts[entity.Handle] = true
-
-		var c ContactInfo
-		c.setContact(entity)
-		d.ContactsInfos = append(d.ContactsInfos, c)
-	}
+	AddContacts(d, d.Domain.Entities)
 
 	t, err := template.New("domain").Parse(domainTmpl)
 

@@ -18,6 +18,10 @@ type Entity struct {
 	ContactsInfos []ContactInfo
 }
 
+func (e *Entity) AddContact(c ContactInfo) {
+	e.ContactsInfos = append(e.ContactsInfos, c)
+}
+
 func (e *Entity) setDates() {
 	for _, event := range e.Entity.Events {
 		date := event.Date.Format(time.RFC3339)
@@ -34,20 +38,7 @@ func (e *Entity) setDates() {
 func (e *Entity) ToText(wr io.Writer) error {
 	e.setDates()
 	e.ContactInfo.setContact(*e.Entity)
-
-	contacts := make(map[string]bool)
-	e.ContactsInfos = make([]ContactInfo, 0, len(e.Entity.Entities))
-	for _, entity := range e.Entity.Entities {
-		if contacts[entity.Handle] == true {
-			continue
-		}
-		contacts[entity.Handle] = true
-
-		var c ContactInfo
-		c.Handle = entity.Handle
-		c.setContact(entity)
-		e.ContactsInfos = append(e.ContactsInfos, c)
-	}
+	AddContacts(e, e.Entity.Entities)
 
 	t, err := template.New("entity template").Parse(entityTmpl)
 	if err != nil {
