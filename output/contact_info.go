@@ -62,3 +62,21 @@ func (c *ContactInfo) setContact(entity protocol.Entity) {
 		}
 	}
 }
+
+type ContactList interface {
+	AddContact(ContactInfo)
+}
+
+func AddContacts(c ContactList, entities []protocol.Entity) {
+	contacts := make(map[string]bool)
+	for _, entity := range entities {
+		if contacts[entity.Handle] {
+			continue
+		}
+		contacts[entity.Handle] = true
+
+		var contactInfo ContactInfo
+		contactInfo.setContact(entity)
+		c.AddContact(contactInfo)
+	}
+}
