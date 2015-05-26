@@ -27,7 +27,7 @@ func TestFetch(t *testing.T) {
 	for _, test := range tests {
 		c := NewClient(nil)
 		body := ""
-		r, err := c.fetch(test.uri)
+		r, _, err := c.fetch(test.uri)
 
 		if err == nil {
 			content, _ := ioutil.ReadAll(r)
