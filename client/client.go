@@ -2,7 +2,6 @@ package client
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"net"
@@ -22,8 +21,6 @@ const (
 	entity kind = "entity"
 )
 
-var SERVER_RETURNED_NOT_200 error = errors.New("The HTTP status code returned from server is not 200 OK!")
-
 type Client struct {
 	httpClient *http.Client
 	uris       []string
@@ -38,14 +35,9 @@ func NewClient(uris []string, httpClient *http.Client) *Client {
 
 func (c *Client) Domain(fqdn string) (*protocol.DomainResponse, error) {
 	r := &protocol.DomainResponse{}
-	fqdn = strings.ToLower(idn.ToPunycode(fqdn))
+	fqdn = idn.ToPunycode(strings.ToLower(fqdn))
 
-	err := c.query(dns, fqdn, r)
-	if err != nil {
-		if err == SERVER_RETURNED_NOT_200 {
-			// TODO - handle http status code returned from server properly
-			return nil, nil
-		}
+	if err := c.query(dns, fqdn, r); err != nil {
 		return nil, err
 	}
 
@@ -136,8 +128,8 @@ func (c *Client) fetch(uri string) (io.ReadCloser, error) {
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		// TODO - handle the error properly
-		return resp.Body, SERVER_RETURNED_NOT_200
+		return resp.Body, fmt.Errorf("unexpected response: %d %s",
+			resp.StatusCode, http.StatusText(resp.StatusCode))
 	}
 
 	return resp.Body, nil
