@@ -22,9 +22,10 @@ const (
 )
 
 type Client struct {
-	httpClient *http.Client
-	cacheKey   string
-	Bootstrap  string
+	httpClient  *http.Client
+	cacheKey    string
+	Bootstrap   string
+	reloadCache bool
 }
 
 func NewClient(httpClient *http.Client) *Client {
@@ -85,11 +86,8 @@ func (c *Client) CheckDomain(fqdn string, cached bool, r serviceRegistry) (uris 
 		return nil, nil
 	}
 
-	transport := c.httpClient.Transport.(*httpcache.Transport)
-	transport.Cache.Delete(c.cacheKey)
-	c.httpClient.Transport = transport
-
-	body, cached, err := c.fetch(c.Bootstrap + string(dns))
+	c.reloadCache = true
+	body, cached, err := c.fetch(fmt.Sprintf(c.Bootstrap, dns))
 	if err != nil {
 		return nil, err
 	}
@@ -156,6 +154,10 @@ func (c *Client) fetch(uri string) (_ io.ReadCloser, cached bool, err error) {
 
 	if err != nil {
 		return nil, cached, err
+	}
+
+	if c.reloadCache {
+		req.Header.Add("Cache-Control", "max-age=0")
 	}
 
 	c.cacheKey = req.URL.String()
