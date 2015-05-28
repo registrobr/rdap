@@ -54,6 +54,7 @@ func TestQuery(t *testing.T) {
 		kind           kind
 		identifier     interface{}
 		uris           []string
+		status         int
 		responseBody   string
 		expectedObject interface{}
 		expectedError  error
@@ -63,14 +64,14 @@ func TestQuery(t *testing.T) {
 			kind:          dns,
 			identifier:    "example.br",
 			uris:          []string{"%gh&%ij"},
-			expectedError: fmt.Errorf("no data available for example.br"),
+			expectedError: fmt.Errorf("error(s) fetching RDAP data from example.br:\n  parse %%gh&%%ij/domain/example.br: invalid URL escape \"%%gh\""),
 		},
 		{
 			description:   "it should return an error due to invalid json in rdap response",
 			kind:          dns,
 			identifier:    "example.br",
 			responseBody:  "invalid",
-			expectedError: fmt.Errorf("no data available for example.br"),
+			expectedError: fmt.Errorf("error(s) fetching RDAP data from example.br:\n  invalid character 'i' looking for beginning of value"),
 		},
 		{
 			description:    "it should return a valid domain object",
@@ -78,6 +79,14 @@ func TestQuery(t *testing.T) {
 			identifier:     "example.br",
 			responseBody:   "{\"objectClassName\": \"domain\"}",
 			expectedObject: map[string]interface{}{"objectClassName": "domain"},
+		},
+		{
+			description:   "it should return an error due to non-ok http status code in response",
+			kind:          dns,
+			identifier:    "example.br",
+			status:        http.StatusNotFound,
+			responseBody:  "{}",
+			expectedError: fmt.Errorf("error(s) fetching RDAP data from example.br:\n  unexpected response: 404 Not Found"),
 		},
 	}
 
@@ -89,6 +98,10 @@ func TestQuery(t *testing.T) {
 		if len(test.responseBody) > 0 {
 			ts := httptest.NewServer(
 				http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					if test.status > 0 {
+						w.WriteHeader(test.status)
+					}
+
 					w.Write([]byte(test.responseBody))
 				}),
 			)
@@ -98,14 +111,13 @@ func TestQuery(t *testing.T) {
 
 		err := c.query(test.kind, test.identifier, &object)
 
-		t.Log("Got an error in test case number:", i)
 		if test.expectedError != nil {
 			if fmt.Sprintf("%v", test.expectedError) != fmt.Sprintf("%v", err) {
-				t.Fatalf("%s: expected error “%s”, got “%s”", test.description, test.expectedError, err)
+				t.Fatalf("[%d] %s: expected error “%s”, got “%s”", i, test.description, test.expectedError, err)
 			}
 		} else {
 			if !reflect.DeepEqual(test.expectedObject, object) {
-				t.Fatalf("“%s”: expected “%v”, got “%v”", test.description, test.expectedObject, object)
+				t.Fatalf("[%d] “%s”: expected “%v”, got “%v”", i, test.description, test.expectedObject, object)
 			}
 		}
 	}
@@ -137,7 +149,7 @@ func TestQueriers(t *testing.T) {
 		},
 		{
 			description: "it should return the right uris when matching an ipv4 network",
-			kind:        ip,
+			kind:        ipnetwork,
 			identifier: func() *net.IPNet {
 				_, cidr, _ := net.ParseCIDR("192.168.0.0/24")
 				return cidr
@@ -146,8 +158,8 @@ func TestQueriers(t *testing.T) {
 			expectedObject: &protocol.IPNetwork{ObjectClassName: "ipv4"},
 		},
 		{
-			description: "it should return the right uris when matching an ipv4 network",
-			kind:        ip,
+			description: "it should return the right uris when matching an ipv6 network",
+			kind:        ipnetwork,
 			identifier: func() *net.IPNet {
 				_, cidr, _ := net.ParseCIDR("2001:0200:1000::/48")
 				return cidr
@@ -156,28 +168,56 @@ func TestQueriers(t *testing.T) {
 			expectedObject: &protocol.IPNetwork{ObjectClassName: "ipv6"},
 		},
 		{
+			description:    "it should return the right uris when matching an entity",
+			kind:           entity,
+			identifier:     "example",
+			responseBody:   "{\"objectClassName\": \"entity\"}",
+			expectedObject: &protocol.Entity{ObjectClassName: "entity"},
+		},
+		{
+			description:    "it should return the right uris when matching a ip",
+			kind:           ip,
+			identifier:     net.ParseIP("192.168.1.1"),
+			responseBody:   "{\"objectClassName\": \"ip\"}",
+			expectedObject: &protocol.IPNetwork{ObjectClassName: "ip"},
+		},
+		{
 			description:   "it should return an error when matching a domain due to an invalid uri",
 			kind:          dns,
 			identifier:    "example.br",
 			uris:          []string{"%gh&%ij"},
-			expectedError: fmt.Errorf("no data available for example.br"),
+			expectedError: fmt.Errorf("error(s) fetching RDAP data from example.br:\n  parse %%gh&%%ij/domain/example.br: invalid URL escape \"%%gh\""),
 		},
 		{
 			description:   "it should return an error when matching an as number due to an invalid uri",
 			kind:          asn,
 			identifier:    uint64(1),
 			uris:          []string{"%gh&%ij"},
-			expectedError: fmt.Errorf("no data available for 1"),
+			expectedError: fmt.Errorf("error(s) fetching RDAP data from 1:\n  parse %%gh&%%ij/autnum/1: invalid URL escape \"%%gh\""),
 		},
 		{
 			description: "it should return an error when matching an ip network due to an invalid uri",
-			kind:        ip,
+			kind:        ipnetwork,
 			identifier: func() *net.IPNet {
 				_, cidr, _ := net.ParseCIDR("192.168.0.0/24")
 				return cidr
 			}(),
 			uris:          []string{"%gh&%ij"},
-			expectedError: fmt.Errorf("no data available for 192.168.0.0/24"),
+			expectedError: fmt.Errorf("error(s) fetching RDAP data from 192.168.0.0/24:\n  parse %%gh&%%ij/ip/192.168.0.0/24: invalid URL escape \"%%gh\""),
+		},
+		{
+			description:   "it should return an error when matching an ip due to an invalid uri",
+			kind:          ip,
+			identifier:    net.ParseIP("192.168.1.1"),
+			uris:          []string{"%gh&%ij"},
+			expectedError: fmt.Errorf("error(s) fetching RDAP data from 192.168.1.1:\n  parse %%gh&%%ij/ip/192.168.1.1: invalid URL escape \"%%gh\""),
+		},
+		{
+			description:   "it should return an error when matching an ip due to an invalid uri",
+			kind:          entity,
+			identifier:    "example",
+			uris:          []string{"%gh&%ij"},
+			expectedError: fmt.Errorf("error(s) fetching RDAP data from example:\n  parse %%gh&%%ij/entity/example: invalid URL escape \"%%gh\""),
 		},
 	}
 
@@ -205,18 +245,21 @@ func TestQueriers(t *testing.T) {
 			object, err = c.Domain(test.identifier.(string))
 		case asn:
 			object, err = c.ASN(test.identifier.(uint64))
-		case ip:
+		case ipnetwork:
 			object, err = c.IPNetwork(test.identifier.(*net.IPNet))
+		case ip:
+			object, err = c.IP(test.identifier.(net.IP))
+		case entity:
+			object, err = c.Entity(test.identifier.(string))
 		}
 
-		t.Log("Got an error in test case number:", i)
 		if test.expectedError != nil {
 			if fmt.Sprintf("%v", test.expectedError) != fmt.Sprintf("%v", err) {
-				t.Fatalf("%s: expected error “%s”, got “%s”", test.description, test.expectedError, err)
+				t.Fatalf("[%d] %s: expected error “%s”, got “%s”", i, test.description, test.expectedError, err)
 			}
 		} else {
 			if !reflect.DeepEqual(test.expectedObject, object) {
-				t.Fatalf("“%s”: expected “%v”, got “%v”", test.description, test.expectedObject, object)
+				t.Fatalf("[%d] “%s”: expected “%v”, got “%v”", i, test.description, test.expectedObject, object)
 			}
 		}
 	}

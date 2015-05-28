@@ -15,10 +15,11 @@ import (
 type kind string
 
 const (
-	dns    kind = "domain"
-	asn    kind = "autnum"
-	ip     kind = "ip"
-	entity kind = "entity"
+	dns       kind = "domain"
+	asn       kind = "autnum"
+	ip        kind = "ip"
+	ipnetwork kind = "ipnetwork"
+	entity    kind = "entity"
 )
 
 type Client struct {
@@ -67,7 +68,7 @@ func (c *Client) Entity(identifier string) (*protocol.Entity, error) {
 func (c *Client) IPNetwork(ipnet *net.IPNet) (*protocol.IPNetwork, error) {
 	r := &protocol.IPNetwork{}
 
-	if err := c.query(ip, ipnet, r); err != nil {
+	if err := c.query(ipnetwork, ipnet, r); err != nil {
 		return nil, err
 	}
 
@@ -85,29 +86,33 @@ func (c *Client) IP(netIP net.IP) (*protocol.IPNetwork, error) {
 }
 
 func (c *Client) query(kind kind, identifier interface{}, object interface{}) (err error) {
+	errors := make([]string, 0)
 	for _, uri := range c.uris {
+		if kind == ipnetwork {
+			kind = ip
+		}
+
 		uri := fmt.Sprintf("%s/%s/%v", uri, kind, identifier)
 
 		var body io.ReadCloser
 		body, err = c.fetch(uri)
 
 		if err != nil {
+			errors = append(errors, err.Error())
 			continue
 		}
 
 		defer body.Close()
+
 		if err = json.NewDecoder(body).Decode(&object); err != nil {
+			errors = append(errors, err.Error())
 			continue
 		}
 
-		return err
+		return nil
 	}
 
-	if err != nil {
-		return err
-	}
-
-	return fmt.Errorf("no data available for %v", identifier)
+	return fmt.Errorf("error(s) fetching RDAP data from %v:\n  %s", identifier, strings.Join(errors, "\n  "))
 }
 
 func (c *Client) fetch(uri string) (io.ReadCloser, error) {
