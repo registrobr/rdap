@@ -7,6 +7,8 @@ import (
 	"net"
 	"net/http"
 	"sort"
+
+	"github.com/registrobr/rdap-client/Godeps/_workspace/src/github.com/gregjones/httpcache"
 )
 
 type kind string
@@ -20,8 +22,10 @@ const (
 )
 
 type Client struct {
-	httpClient *http.Client
-	Bootstrap  string
+	httpClient  *http.Client
+	cacheKey    string
+	Bootstrap   string
+	reloadCache bool
 }
 
 func NewClient(httpClient *http.Client) *Client {
@@ -59,11 +63,48 @@ func (c *Client) IP(ip net.IP) ([]string, error) {
 	return c.query(kind, ip)
 }
 
+func (c *Client) CheckDomain(fqdn string, cached bool, r serviceRegistry) (uris []string, err error) {
+	uris, err = r.MatchDomain(fqdn)
+	if err != nil {
+		return
+	}
+
+	if len(uris) > 0 {
+		return
+	}
+
+	if !cached {
+		return
+	}
+
+	nsSet, err := net.LookupNS(fqdn)
+	if err != nil {
+		return nil, nil
+	}
+
+	if len(nsSet) == 0 {
+		return nil, nil
+	}
+
+	c.reloadCache = true
+	body, cached, err := c.fetch(fmt.Sprintf(c.Bootstrap, dns))
+	if err != nil {
+		return nil, err
+	}
+	defer body.Close()
+
+	if err := json.NewDecoder(body).Decode(&r); err != nil {
+		return nil, err
+	}
+
+	return r.MatchDomain(fqdn)
+}
+
 func (c *Client) query(kind kind, identifier interface{}) ([]string, error) {
 	uris := []string{}
 	r := serviceRegistry{}
 	uri := fmt.Sprintf(c.Bootstrap, kind)
-	body, err := c.fetch(uri)
+	body, cached, err := c.fetch(uri)
 
 	if err != nil {
 		return nil, err
@@ -81,7 +122,7 @@ func (c *Client) query(kind kind, identifier interface{}) ([]string, error) {
 
 	switch kind {
 	case dns:
-		uris, err = r.MatchDomain(identifier.(string))
+		uris, err = c.CheckDomain(identifier.(string), cached, r)
 	case asn:
 		uris, err = r.MatchAS(identifier.(uint64))
 	case ipv4, ipv6:
@@ -108,22 +149,31 @@ func (c *Client) query(kind kind, identifier interface{}) ([]string, error) {
 	return uris, nil
 }
 
-func (c *Client) fetch(uri string) (io.ReadCloser, error) {
+func (c *Client) fetch(uri string) (_ io.ReadCloser, cached bool, err error) {
 	req, err := http.NewRequest("GET", uri, nil)
 
 	if err != nil {
-		return nil, err
+		return nil, cached, err
 	}
+
+	if c.reloadCache {
+		req.Header.Add("Cache-Control", "max-age=0")
+	}
+
+	c.cacheKey = req.URL.String()
 
 	if c.httpClient == nil {
 		c.httpClient = &http.Client{}
 	}
 
 	resp, err := c.httpClient.Do(req)
-
 	if err != nil {
-		return nil, err
+		return nil, cached, err
 	}
 
-	return resp.Body, nil
+	if resp.Header.Get(httpcache.XFromCache) == "1" {
+		cached = true
+	}
+
+	return resp.Body, cached, nil
 }

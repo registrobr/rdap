@@ -8,6 +8,8 @@ import (
 	"net/http/httptest"
 	"reflect"
 	"testing"
+
+	"github.com/registrobr/rdap-client/Godeps/_workspace/src/github.com/gregjones/httpcache"
 )
 
 func TestFetch(t *testing.T) {
@@ -27,7 +29,7 @@ func TestFetch(t *testing.T) {
 	for _, test := range tests {
 		c := NewClient(nil)
 		body := ""
-		r, err := c.fetch(test.uri)
+		r, _, err := c.fetch(test.uri)
 
 		if err == nil {
 			content, _ := ioutil.ReadAll(r)
@@ -237,5 +239,49 @@ func TestQueriers(t *testing.T) {
 				t.Fatalf("“%s”: expected “%v”, got “%v”", test.description, test.expectedURIs, uris)
 			}
 		}
+	}
+}
+
+func TestDomainCache(t *testing.T) {
+	cachedBody := `{"version":"1.0","services":[[["net"], ["rdap-domain.example.net"]]]}`
+	freshBody := `{
+		"version":"1.0",
+		"services":[
+			[["br"], ["rdap-domain.example.com.br"]],
+			[["net"], ["rdap-domain.example.net"]]
+		]}`
+
+	server := httptest.NewServer(
+		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Cache-Control", "max-age=3600")
+
+			if r.Header.Get("Cache-Control") == "max-age=0" {
+				w.Write([]byte(freshBody))
+				return
+			}
+
+			w.Write([]byte(cachedBody))
+		}))
+
+	httpClient := &http.Client{
+		Transport: httpcache.NewMemoryCacheTransport(),
+	}
+
+	c := NewClient(httpClient)
+	c.Bootstrap = server.URL + "/%s"
+
+	uris, err := c.query(dns, "registro.br")
+
+	uris, err = c.query(dns, "registro.br")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(uris) != 1 {
+		t.Fatal("Wrong number of returned URIs!")
+	}
+
+	if uris[0] != "rdap-domain.example.com.br" {
+		t.Fatal("Wrong service returned!")
 	}
 }
