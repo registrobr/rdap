@@ -149,7 +149,7 @@ func TestQueriers(t *testing.T) {
 		},
 		{
 			description: "it should return the right uris when matching an ipv4 network",
-			kind:        ipnetwork,
+			kind:        kind("ipnetwork"),
 			identifier: func() *net.IPNet {
 				_, cidr, _ := net.ParseCIDR("192.168.0.0/24")
 				return cidr
@@ -159,7 +159,7 @@ func TestQueriers(t *testing.T) {
 		},
 		{
 			description: "it should return the right uris when matching an ipv6 network",
-			kind:        ipnetwork,
+			kind:        kind("ipnetwork"),
 			identifier: func() *net.IPNet {
 				_, cidr, _ := net.ParseCIDR("2001:0200:1000::/48")
 				return cidr
@@ -197,7 +197,7 @@ func TestQueriers(t *testing.T) {
 		},
 		{
 			description: "it should return an error when matching an ip network due to an invalid uri",
-			kind:        ipnetwork,
+			kind:        kind("ipnetwork"),
 			identifier: func() *net.IPNet {
 				_, cidr, _ := net.ParseCIDR("192.168.0.0/24")
 				return cidr
@@ -245,7 +245,7 @@ func TestQueriers(t *testing.T) {
 			object, err = c.Domain(test.identifier.(string))
 		case asn:
 			object, err = c.ASN(test.identifier.(uint64))
-		case ipnetwork:
+		case kind("ipnetwork"):
 			object, err = c.IPNetwork(test.identifier.(*net.IPNet))
 		case ip:
 			object, err = c.IP(test.identifier.(net.IP))
