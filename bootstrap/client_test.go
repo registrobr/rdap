@@ -97,6 +97,13 @@ func TestQuery(t *testing.T) {
 			expectedURIs: []string{"rdap-ip.example.br"},
 		},
 		{
+			description:  "it should return the right uris when matching an ip",
+			kind:         ipv4,
+			identifier:   net.ParseIP("192.168.1.1"),
+			responseBody: "{\"version\":\"1.0\",\"services\":[[[\"192.168.1.1/32\"], [\"rdap-ip.example.br\"]]]}",
+			expectedURIs: []string{"rdap-ip.example.br"},
+		},
+		{
 			description:  "it should return no uris when matching a domain",
 			kind:         dns,
 			identifier:   "example.br",
@@ -111,10 +118,17 @@ func TestQuery(t *testing.T) {
 			expectedURIs: nil,
 		},
 		{
+			description:   "it should return an error due to an invalid ip",
+			kind:          ipv4,
+			identifier:    net.ParseIP("192.168.1.1"),
+			responseBody:  "{\"version\":\"1.0\",\"services\":[[[\"invalid\"], [\"rdap-as.example.net\"]]]}",
+			expectedError: fmt.Errorf("invalid CIDR address: invalid"),
+		},
+		{
 			description:   "it should return an error due to incompatible bootstrap spec version",
 			kind:          asn,
 			identifier:    uint64(1),
-			responseBody:  "{\"version\":\"2.0\",\"services\":[[[\"1-invalid\"], [\"rdap-as.example.net\"]]]}",
+			responseBody:  "{\"version\":\"2.0\"}",
 			expectedError: fmt.Errorf("incompatible bootstrap specification version: 2.0 (expecting 1.0)"),
 		},
 	}
@@ -134,19 +148,7 @@ func TestQuery(t *testing.T) {
 			c.Bootstrap = ts.URL + "/%v"
 		}
 
-		var (
-			uris []string
-			err  error
-		)
-
-		switch test.kind {
-		case dns:
-			uris, err = c.query(test.kind, test.identifier.(string))
-		case asn:
-			uris, err = c.query(test.kind, test.identifier.(uint64))
-		case ipv4, ipv6:
-			uris, err = c.query(test.kind, test.identifier.(*net.IPNet))
-		}
+		uris, err := c.query(test.kind, test.identifier)
 
 		if test.expectedError != nil {
 			if fmt.Sprintf("%v", test.expectedError) != fmt.Sprintf("%v", err) {
@@ -195,12 +197,26 @@ func TestQueriers(t *testing.T) {
 			expectedURIs: []string{"rdap-ip.example.br"},
 		},
 		{
-			description: "it should return the right uris when matching an ipv4 network",
+			description:  "it should return the right uris when matching an ipv4",
+			kind:         ipv4,
+			identifier:   net.ParseIP("192.168.1.1"),
+			responseBody: "{\"version\":\"1.0\",\"services\":[[[\"192.168.1.1/24\"], [\"rdap-ip.example.br\"]]]}",
+			expectedURIs: []string{"rdap-ip.example.br"},
+		},
+		{
+			description: "it should return the right uris when matching an ipv6 network",
 			kind:        ipv6,
 			identifier: func() *net.IPNet {
 				_, cidr, _ := net.ParseCIDR("2001:0200:1000::/48")
 				return cidr
 			}(),
+			responseBody: "{\"version\":\"1.0\",\"services\":[[[\"2001:0200:1000::/36\"], [\"rdap-ip.example.br\"]]]}",
+			expectedURIs: []string{"rdap-ip.example.br"},
+		},
+		{
+			description:  "it should return the right uris when matching an ipv6",
+			kind:         ipv6,
+			identifier:   net.ParseIP("2001:0200:1000::"),
 			responseBody: "{\"version\":\"1.0\",\"services\":[[[\"2001:0200:1000::/36\"], [\"rdap-ip.example.br\"]]]}",
 			expectedURIs: []string{"rdap-ip.example.br"},
 		},
@@ -227,7 +243,11 @@ func TestQueriers(t *testing.T) {
 		case asn:
 			uris, err = c.ASN(test.identifier.(uint64))
 		case ipv4, ipv6:
-			uris, err = c.IPNetwork(test.identifier.(*net.IPNet))
+			if id, ok := test.identifier.(*net.IPNet); ok {
+				uris, err = c.IPNetwork(id)
+			} else if id, ok := test.identifier.(net.IP); ok {
+				uris, err = c.IP(id)
+			}
 		}
 
 		if test.expectedError != nil {

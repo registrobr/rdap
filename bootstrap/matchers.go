@@ -13,7 +13,7 @@ import (
 // specific range to which an AS number "asn" belongs.
 //
 // See http://tools.ietf.org/html/rfc7484#section-5.3
-func (s serviceRegistry) MatchAS(asn uint64) (uris []string, err error) {
+func (s serviceRegistry) matchAS(asn uint64) (uris []string, err error) {
 	var size uint64 = math.MaxUint32
 
 	for _, service := range s.Services {
@@ -46,7 +46,7 @@ func (s serviceRegistry) MatchAS(asn uint64) (uris []string, err error) {
 //
 // See http://tools.ietf.org/html/rfc7484#section-5.1
 //     http://tools.ietf.org/html/rfc7484#section-5.2
-func (s serviceRegistry) MatchIPNetwork(network *net.IPNet) (uris []string, err error) {
+func (s serviceRegistry) matchIPNetwork(network *net.IPNet) (uris []string, err error) {
 	size := 0
 
 	for _, service := range s.Services {
@@ -80,7 +80,7 @@ func (s serviceRegistry) MatchIPNetwork(network *net.IPNet) (uris []string, err 
 //
 // See http://tools.ietf.org/html/rfc7484#section-5.1
 //     http://tools.ietf.org/html/rfc7484#section-5.2
-func (s serviceRegistry) MatchIP(ip net.IP) (uris []string, err error) {
+func (s serviceRegistry) matchIP(ip net.IP) (uris []string, err error) {
 	for _, service := range s.Services {
 		for _, entry := range service.entries() {
 			_, ipNet, err := net.ParseCIDR(entry)
@@ -102,7 +102,7 @@ func (s serviceRegistry) MatchIP(ip net.IP) (uris []string, err error) {
 // longest match of the target domain name "fqdn".
 //
 // See http://tools.ietf.org/html/rfc7484#section-4
-func (s serviceRegistry) MatchDomain(fqdn string) (uris []string, err error) {
+func (s serviceRegistry) matchDomain(fqdn string) (uris []string, err error) {
 	var (
 		size      int
 		fqdnParts = strings.Split(idn.ToPunycode(fqdn), ".")

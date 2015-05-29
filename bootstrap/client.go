@@ -63,8 +63,8 @@ func (c *Client) IP(ip net.IP) ([]string, error) {
 	return c.query(kind, ip)
 }
 
-func (c *Client) CheckDomain(fqdn string, cached bool, r serviceRegistry) (uris []string, err error) {
-	uris, err = r.MatchDomain(fqdn)
+func (c *Client) checkDomain(fqdn string, cached bool, r serviceRegistry) (uris []string, err error) {
+	uris, err = r.matchDomain(fqdn)
 	if err != nil {
 		return
 	}
@@ -97,7 +97,7 @@ func (c *Client) CheckDomain(fqdn string, cached bool, r serviceRegistry) (uris 
 		return nil, err
 	}
 
-	return r.MatchDomain(fqdn)
+	return r.matchDomain(fqdn)
 }
 
 func (c *Client) query(kind kind, identifier interface{}) ([]string, error) {
@@ -122,16 +122,17 @@ func (c *Client) query(kind kind, identifier interface{}) ([]string, error) {
 
 	switch kind {
 	case dns:
-		uris, err = c.CheckDomain(identifier.(string), cached, r)
+		uris, err = c.checkDomain(identifier.(string), cached, r)
 	case asn:
-		uris, err = r.MatchAS(identifier.(uint64))
+		uris, err = r.matchAS(identifier.(uint64))
 	case ipv4, ipv6:
 		if ip, ok := identifier.(net.IP); ok {
-			uris, err = r.MatchIP(ip)
+			uris, err = r.matchIP(ip)
 			break
 		}
+
 		if ipNet, ok := identifier.(*net.IPNet); ok {
-			uris, err = r.MatchIPNetwork(ipNet)
+			uris, err = r.matchIPNetwork(ipNet)
 			break
 		}
 	}

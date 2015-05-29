@@ -98,7 +98,7 @@ func TestMatchAS(t *testing.T) {
 	}
 
 	for i, test := range tests {
-		urls, err := test.registry.MatchAS(test.as)
+		urls, err := test.registry.matchAS(test.as)
 
 		if test.expectedError != nil && fmt.Sprintf("%v", test.expectedError) != fmt.Sprintf("%v", err) {
 			t.Fatalf("At index %d (%s): expected error %s, got %s", i, test.description, test.expectedError, err)
@@ -182,7 +182,7 @@ func TestMatchIPNetwork(t *testing.T) {
 
 	for i, test := range tests {
 		_, ipnet, _ := net.ParseCIDR(test.ipnet)
-		urls, err := test.registry.MatchIPNetwork(ipnet)
+		urls, err := test.registry.matchIPNetwork(ipnet)
 
 		if test.expectedError != nil && fmt.Sprintf("%v", test.expectedError) != fmt.Sprintf("%v", err) {
 			t.Fatalf("At index %d (%s): expected error %s, got %s", i, test.description, test.expectedError, err)
@@ -254,7 +254,7 @@ func TestMatchDomain(t *testing.T) {
 	}
 
 	for i, test := range tests {
-		urls, err := test.registry.MatchDomain(test.fqdn)
+		urls, err := test.registry.matchDomain(test.fqdn)
 
 		if test.expectedError != nil && fmt.Sprintf("%v", test.expectedError) != fmt.Sprintf("%v", err) {
 			t.Fatalf("At index %d (%s): expected error %s, got %s", i, test.description, test.expectedError, err)
