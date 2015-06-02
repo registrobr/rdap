@@ -12,6 +12,78 @@ import (
 	"github.com/registrobr/rdap-client/protocol"
 )
 
+func TestHandleHTTPStatusCode(t *testing.T) {
+	tests := []struct {
+		description string
+		expectedErr error
+		kind        kind
+		err         protocol.Error
+		header      map[string]string
+	}{
+		{
+			description: "it should return a nil error",
+			expectedErr: nil,
+			kind:        dns,
+			err: protocol.Error{
+				ErrorCode: http.StatusOK,
+			},
+		},
+		{
+			description: "it should got a not found error",
+			expectedErr: fmt.Errorf("%s not found.", dns),
+			kind:        dns,
+			err: protocol.Error{
+				ErrorCode: http.StatusNotFound,
+			},
+		},
+		{
+			description: "it should got an unexpected response error",
+			expectedErr: fmt.Errorf("unexpected response: %d %s",
+				http.StatusForbidden, http.StatusText(http.StatusForbidden)),
+			kind: dns,
+			err: protocol.Error{
+				ErrorCode: http.StatusForbidden,
+			},
+			header: map[string]string{"Content-Type": "application/text"},
+		},
+	}
+
+	for i, test := range tests {
+		t.Logf("Test case number %d", i)
+		t.Logf("Test case description: %s", test.description)
+
+		response := &http.Response{
+			StatusCode: test.err.ErrorCode,
+			Header:     http.Header{},
+		}
+
+		if len(test.header) > 0 {
+			for k, v := range test.header {
+				response.Header.Set(k, v)
+			}
+		}
+
+		var c Client
+		err := c.handleHTTPStatusCode(test.kind, response)
+		if test.expectedErr == nil {
+			if err == nil {
+				// nothig to do
+				continue
+			}
+
+			t.Fatalf("Expecting '%v', got '%s'",
+				test.expectedErr,
+				err.Error())
+		}
+
+		if err.Error() != test.expectedErr.Error() {
+			t.Fatalf("Expecting '%s', got '%s'",
+				test.expectedErr,
+				err.Error())
+		}
+	}
+}
+
 func TestFetch(t *testing.T) {
 	tests := []struct {
 		description   string
@@ -32,7 +104,7 @@ func TestFetch(t *testing.T) {
 		r, err := c.fetch(test.uri)
 
 		if err == nil {
-			content, _ := ioutil.ReadAll(r)
+			content, _ := ioutil.ReadAll(r.Body)
 			body = string(content)
 		}
 
