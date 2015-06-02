@@ -3,7 +3,6 @@ package client
 import (
 	"encoding/json"
 	"fmt"
-	"io"
 	"net"
 	"net/http"
 	"strings"
@@ -84,22 +83,49 @@ func (c *Client) IP(netIP net.IP) (*protocol.IPNetwork, error) {
 	return r, nil
 }
 
+func (c *Client) handleHTTPStatusCode(kind kind, response *http.Response) error {
+	if response.StatusCode == http.StatusOK {
+		return nil
+	}
+
+	if response.StatusCode == http.StatusNotFound {
+		return fmt.Errorf("%s not found.", kind)
+	}
+
+	if response.Header.Get("Content-Type") != "application/json" {
+		return fmt.Errorf("unexpected response: %d %s",
+			response.StatusCode, http.StatusText(response.StatusCode))
+	}
+
+	var responseErr protocol.Error
+	if err := json.NewDecoder(response.Body).Decode(&responseErr); err != nil {
+		return err
+	}
+
+	return fmt.Errorf("HTTP status code: %d (%s)\n%s:\n  %s",
+		responseErr.ErrorCode,
+		http.StatusText(responseErr.ErrorCode),
+		responseErr.Title,
+		strings.Join(responseErr.Description, "\n  "))
+}
+
 func (c *Client) query(kind kind, identifier interface{}, object interface{}) (err error) {
 	errors := make([]string, 0)
 	for _, uri := range c.uris {
 		uri := fmt.Sprintf("%s/%s/%v", uri, kind, identifier)
 
-		var body io.ReadCloser
-		body, err = c.fetch(uri)
-
+		res, err := c.fetch(uri)
 		if err != nil {
 			errors = append(errors, err.Error())
 			continue
 		}
+		defer res.Body.Close()
 
-		defer body.Close()
+		if err := c.handleHTTPStatusCode(kind, res); err != nil {
+			errors = append(errors, err.Error())
+		}
 
-		if err = json.NewDecoder(body).Decode(&object); err != nil {
+		if err = json.NewDecoder(res.Body).Decode(&object); err != nil {
 			errors = append(errors, err.Error())
 			continue
 		}
@@ -110,27 +136,23 @@ func (c *Client) query(kind kind, identifier interface{}, object interface{}) (e
 	return fmt.Errorf("error(s) fetching RDAP data from %v:\n  %s", identifier, strings.Join(errors, "\n  "))
 }
 
-func (c *Client) fetch(uri string) (io.ReadCloser, error) {
+func (c *Client) fetch(uri string) (response *http.Response, err error) {
 	req, err := http.NewRequest("GET", uri, nil)
 
 	if err != nil {
 		return nil, err
 	}
+	req.Header.Add("Accept", "application/json")
 
 	if c.httpClient == nil {
 		c.httpClient = &http.Client{}
 	}
 
-	resp, err := c.httpClient.Do(req)
+	response, err = c.httpClient.Do(req)
 
 	if err != nil {
 		return nil, err
 	}
 
-	if resp.StatusCode != http.StatusOK {
-		return resp.Body, fmt.Errorf("unexpected response: %d %s",
-			resp.StatusCode, http.StatusText(resp.StatusCode))
-	}
-
-	return resp.Body, nil
+	return response, nil
 }
