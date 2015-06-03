@@ -1,12 +1,15 @@
 package client
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/registrobr/rdap-client/protocol"
@@ -17,14 +20,14 @@ func TestHandleHTTPStatusCode(t *testing.T) {
 		description string
 		expectedErr error
 		kind        kind
-		err         protocol.Error
+		err         *protocol.Error
 		header      map[string]string
 	}{
 		{
 			description: "it should return a nil error",
 			expectedErr: nil,
 			kind:        dns,
-			err: protocol.Error{
+			err: &protocol.Error{
 				ErrorCode: http.StatusOK,
 			},
 		},
@@ -32,7 +35,7 @@ func TestHandleHTTPStatusCode(t *testing.T) {
 			description: "it should got a not found error",
 			expectedErr: fmt.Errorf("%s not found.", dns),
 			kind:        dns,
-			err: protocol.Error{
+			err: &protocol.Error{
 				ErrorCode: http.StatusNotFound,
 			},
 		},
@@ -41,20 +44,42 @@ func TestHandleHTTPStatusCode(t *testing.T) {
 			expectedErr: fmt.Errorf("unexpected response: %d %s",
 				http.StatusForbidden, http.StatusText(http.StatusForbidden)),
 			kind: dns,
-			err: protocol.Error{
+			err: &protocol.Error{
 				ErrorCode: http.StatusForbidden,
 			},
 			header: map[string]string{"Content-Type": "application/text"},
 		},
+		{
+			description: "it should got an unexpected response error",
+			expectedErr: fmt.Errorf("HTTP status code: %d (%s)\n%s:\n  %s",
+				http.StatusPreconditionFailed,
+				http.StatusText(http.StatusPreconditionFailed),
+				"Request error",
+				strings.Join([]string{"Error 1", "Error 2", "Error 3"}, "\n  ")),
+			kind: dns,
+			err: &protocol.Error{
+				ErrorCode:   http.StatusPreconditionFailed,
+				Title:       "Request error",
+				Description: []string{"Error 1", "Error 2", "Error 3"},
+			},
+			header: map[string]string{"Content-Type": "application/json"},
+		},
 	}
 
 	for i, test := range tests {
-		t.Logf("Test case number %d", i)
-		t.Logf("Test case description: %s", test.description)
-
 		response := &http.Response{
 			StatusCode: test.err.ErrorCode,
 			Header:     http.Header{},
+		}
+
+		if test.err != nil {
+			b, err := json.Marshal(test.err)
+			if err != nil {
+				t.Error(err)
+				continue
+			}
+
+			response.Body = ioutil.NopCloser(bytes.NewReader(b))
 		}
 
 		if len(test.header) > 0 {
@@ -67,19 +92,15 @@ func TestHandleHTTPStatusCode(t *testing.T) {
 		err := c.handleHTTPStatusCode(test.kind, response)
 		if test.expectedErr == nil {
 			if err == nil {
-				// nothig to do
+				// nothing to do
 				continue
 			}
 
-			t.Fatalf("Expecting '%v', got '%s'",
-				test.expectedErr,
-				err.Error())
+			t.Fatalf("#%d (%s): Error:\n '%v'\n want:\n '%s'", i, test.description, test.expectedErr, err.Error())
 		}
 
 		if err.Error() != test.expectedErr.Error() {
-			t.Fatalf("Expecting '%s', got '%s'",
-				test.expectedErr,
-				err.Error())
+			t.Fatalf("#%d (%s): Error:\n '%v'\n want:\n '%s'", i, test.description, test.expectedErr, err.Error())
 		}
 	}
 }
@@ -158,7 +179,7 @@ func TestQuery(t *testing.T) {
 			identifier:    "example.br",
 			status:        http.StatusNotFound,
 			responseBody:  "{}",
-			expectedError: fmt.Errorf("error(s) fetching RDAP data from example.br:\n  unexpected response: 404 Not Found"),
+			expectedError: fmt.Errorf("error(s) fetching RDAP data from example.br:\n  domain not found."),
 		},
 	}
 
