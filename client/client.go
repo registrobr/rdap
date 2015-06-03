@@ -123,6 +123,7 @@ func (c *Client) query(kind kind, identifier interface{}, object interface{}) (e
 
 		if err := c.handleHTTPStatusCode(kind, res); err != nil {
 			errors = append(errors, err.Error())
+			continue
 		}
 
 		if err = json.NewDecoder(res.Body).Decode(&object); err != nil {
