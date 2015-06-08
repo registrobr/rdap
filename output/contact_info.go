@@ -1,18 +1,33 @@
 package output
 
 import (
+	"fmt"
+	"net/url"
 	"strings"
-	"time"
 
 	"github.com/registrobr/rdap-client/protocol"
 )
 
+const contactTmpl = `{{range .ContactsInfos}}handle:   {{.Handle}}
+{{range .Persons}}person:   {{.}}
+{{end}}ids:      {{.Ids}}
+{{range .Emails}}e-mail:   {{.}}
+{{end}}{{range .Addresses}}address:     {{.}}
+{{end}}{{range .Phones}}phone:  {{.}}
+{{end}}roles:    {{.Roles}}
+created:  {{.CreatedAt}}
+changed:  {{.UpdatedAt}}
+
+{{end}}`
+
 type ContactInfo struct {
 	Handle    string
+	Ids       string
 	Persons   []string
 	Emails    []string
 	Addresses []string
 	Phones    []string
+	Roles     string
 	CreatedAt string
 	UpdatedAt string
 }
@@ -39,7 +54,9 @@ func (c *ContactInfo) setContact(entity protocol.Entity) {
 			case "adr":
 				address := make([]string, 0)
 
-				for _, v := range v[3].([]string) {
+				for _, v := range v[3].([]interface{}) {
+					v := v.(string)
+
 					if len(v) > 0 {
 						address = append(address, v)
 					}
@@ -47,13 +64,16 @@ func (c *ContactInfo) setContact(entity protocol.Entity) {
 
 				c.Addresses = append(c.Addresses, strings.Join(address, ", "))
 			case "tel":
-				c.Phones = append(c.Phones, v[3].(string))
+				phone := strings.Replace(v[3].(string), ";", "?", 1)
+				uri, _ := url.Parse(phone)
+
+				c.Phones = append(c.Phones, fmt.Sprintf("%s [%s]", uri.Host, uri.Query()["ext"]))
 			}
 		}
 	}
 
 	for _, event := range entity.Events {
-		date := event.Date.Format(time.RFC3339)
+		date := event.Date.Format("20060102")
 
 		switch event.Action {
 		case protocol.EventActionRegistration:
@@ -62,6 +82,16 @@ func (c *ContactInfo) setContact(entity protocol.Entity) {
 			c.UpdatedAt = date
 		}
 	}
+
+	c.Roles = strings.Join(entity.Roles, ", ")
+
+	ids := make([]string, len(entity.PublicIds))
+
+	for i, id := range entity.PublicIds {
+		ids[i] = fmt.Sprintf("%s (%s)", id.Identifier, id.Type)
+	}
+
+	c.Ids = strings.Join(ids, ", ")
 }
 
 type ContactList interface {

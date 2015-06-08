@@ -3,7 +3,6 @@ package output
 import (
 	"io"
 	"text/template"
-	"time"
 
 	"github.com/registrobr/rdap-client/protocol"
 )
@@ -23,7 +22,7 @@ func (i *IPNetwork) AddContact(c ContactInfo) {
 
 func (i *IPNetwork) setDates() {
 	for _, e := range i.IPNetwork.Events {
-		date := e.Date.Format(time.RFC3339)
+		date := e.Date.Format("20060102")
 
 		switch e.Action {
 		case protocol.EventActionRegistration:
@@ -37,6 +36,10 @@ func (i *IPNetwork) setDates() {
 func (i *IPNetwork) ToText(wr io.Writer) error {
 	i.setDates()
 	AddContacts(i, i.IPNetwork.Entities)
+
+	for _, entity := range i.IPNetwork.Entities {
+		AddContacts(i, entity.Entities)
+	}
 
 	t, err := template.New("ipnetwork template").Parse(ipnetTmpl)
 	if err != nil {

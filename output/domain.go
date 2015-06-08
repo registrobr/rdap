@@ -3,7 +3,6 @@ package output
 import (
 	"io"
 	"text/template"
-	"time"
 
 	"github.com/registrobr/rdap-client/protocol"
 )
@@ -15,7 +14,14 @@ type Domain struct {
 	UpdatedAt string
 	ExpiresAt string
 
+	Handles       map[string]string
+	DS            []ds
 	ContactsInfos []ContactInfo
+}
+
+type ds struct {
+	protocol.DS
+	CreatedAt string
 }
 
 func (d *Domain) AddContact(c ContactInfo) {
@@ -24,7 +30,7 @@ func (d *Domain) AddContact(c ContactInfo) {
 
 func (d *Domain) setDates() {
 	for _, e := range d.Domain.Events {
-		date := e.Date.Format(time.RFC3339)
+		date := e.Date.Format("20060102")
 
 		switch e.Action {
 		case protocol.EventActionRegistration:
@@ -37,11 +43,33 @@ func (d *Domain) setDates() {
 	}
 }
 
+func (d *Domain) setDS() {
+	d.DS = make([]ds, len(d.Domain.SecureDNS.DSData))
+
+	for i, dsdatum := range d.Domain.SecureDNS.DSData {
+		myds := ds{DS: dsdatum}
+
+		for _, e := range dsdatum.Events {
+			if e.Action == protocol.EventActionRegistration {
+				myds.CreatedAt = e.Date.Format("20060102")
+			}
+		}
+
+		d.DS[i] = myds
+	}
+}
+
 func (d *Domain) ToText(wr io.Writer) error {
 	d.setDates()
+	d.setDS()
+
 	AddContacts(d, d.Domain.Entities)
 
-	t, err := template.New("domain").Parse(domainTmpl)
+	for _, entity := range d.Domain.Entities {
+		AddContacts(d, entity.Entities)
+	}
+
+	t, err := template.New("domain").Funcs(domainFuncMap).Parse(domainTmpl)
 
 	if err != nil {
 		return err

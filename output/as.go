@@ -3,7 +3,6 @@ package output
 import (
 	"io"
 	"text/template"
-	"time"
 
 	"github.com/registrobr/rdap-client/protocol"
 )
@@ -23,7 +22,7 @@ func (a *AS) AddContact(c ContactInfo) {
 
 func (a *AS) setDates() {
 	for _, e := range a.AS.Events {
-		date := e.Date.Format(time.RFC3339)
+		date := e.Date.Format("20060102")
 
 		switch e.Action {
 		case protocol.EventActionRegistration:
@@ -37,6 +36,10 @@ func (a *AS) setDates() {
 func (a *AS) ToText(wr io.Writer) error {
 	a.setDates()
 	AddContacts(a, a.AS.Entities)
+
+	for _, entity := range a.AS.Entities {
+		AddContacts(a, entity.Entities)
+	}
 
 	t, err := template.New("as template").Parse(asTmpl)
 	if err != nil {
