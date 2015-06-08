@@ -54,7 +54,12 @@ func (c *ContactInfo) setContact(entity protocol.Entity) {
 			case "adr":
 				address := make([]string, 0)
 
-				for _, v := range v[3].([]interface{}) {
+				addresses, ok := v[3].([]interface{})
+				if !ok {
+					continue
+				}
+
+				for _, v := range addresses {
 					v := v.(string)
 
 					if len(v) > 0 {
