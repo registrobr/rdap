@@ -2,20 +2,19 @@ package output
 
 import (
 	"fmt"
-	"net/url"
 	"strings"
 
 	"github.com/registrobr/rdap-client/protocol"
 )
 
 const contactTmpl = `{{range .ContactsInfos}}handle:   {{.Handle}}
+ids:      {{.Ids}}
+roles:    {{.Roles}}
 {{range .Persons}}person:   {{.}}
-{{end}}ids:      {{.Ids}}
-{{range .Emails}}e-mail:   {{.}}
-{{end}}{{range .Addresses}}address:     {{.}}
-{{end}}{{range .Phones}}phone:  {{.}}
-{{end}}roles:    {{.Roles}}
-created:  {{.CreatedAt}}
+{{end}}{{range .Emails}}e-mail:   {{.}}
+{{end}}{{range .Addresses}}address:  {{.}}
+{{end}}{{range .Phones}}phone:    {{.}}
+{{end}}created:  {{.CreatedAt}}
 changed:  {{.UpdatedAt}}
 
 {{end}}`
@@ -69,10 +68,7 @@ func (c *ContactInfo) setContact(entity protocol.Entity) {
 
 				c.Addresses = append(c.Addresses, strings.Join(address, ", "))
 			case "tel":
-				phone := strings.Replace(v[3].(string), ";", "?", 1)
-				uri, _ := url.Parse(phone)
-
-				c.Phones = append(c.Phones, fmt.Sprintf("%s [%s]", uri.Host, uri.Query()["ext"]))
+				c.Phones = append(c.Phones, v[3].(string))
 			}
 		}
 	}

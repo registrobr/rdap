@@ -29,16 +29,19 @@ inetrev:
 nserver:     
 nsstat:      
 nslastaa:    
-created:     2015-03-01T12:00:00Z
-changed:     2015-03-10T14:00:00Z
+created:     20150301
+changed:     20150310
 
-nic-hdl-br: XXXX
-person: Joe User
-e-mail: joe.user@example.com
-address: Av Naçoes Unidas, 11541, 7 andar, Sao Paulo, SP, 04578-000, BR
-phone: tel:+55-11-5509-3506;ext=3506
-created: 2015-03-01T12:00:00Z
-changed: 2015-03-10T14:00:00Z
+handle:   XXXX
+ids:      
+roles:    
+person:   Joe User
+e-mail:   joe.user@example.com
+address:  Av Naçoes Unidas, 11541, 7 andar, Sao Paulo, SP, 04578-000, BR
+phone:    tel:+55-11-5509-3506;ext=3506
+created:  20150301
+changed:  20150310
+
 `
 
 func TestIPNetworkToText(t *testing.T) {
@@ -70,7 +73,7 @@ func TestIPNetworkToText(t *testing.T) {
 						[]interface{}{"email", struct{ Type string }{Type: "work"}, "text", "joe.user@example.com"},
 						[]interface{}{"lang", struct{ Pref string }{Pref: "1"}, "language-tag", "pt"},
 						[]interface{}{"adr", struct{ Type string }{Type: "work"}, "text",
-							[]string{
+							[]interface{}{
 								"Av Naçoes Unidas", "11541", "7 andar", "Sao Paulo", "SP", "04578-000", "BR",
 							},
 						},
@@ -96,5 +99,6 @@ func TestIPNetworkToText(t *testing.T) {
 		for _, l := range diff(TestIPNetworkToTextOutput, string(w.Content)) {
 			t.Log(l)
 		}
+		t.Fatal()
 	}
 }

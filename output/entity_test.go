@@ -7,23 +7,16 @@ import (
 	"github.com/registrobr/rdap-client/protocol"
 )
 
-var TestEntityToTextOutput = `owner:       Joe User
-ownerid:     (CPF/CNPJ)
-responsible: Joe User
-address:      Av Naçoes Unidas, 11541, 7 andar, Sao Paulo, SP, 04578-000, BR
-country:     
-phone:       tel:+55-11-5509-3506;ext=3506
-owner-c:     XXXX
-created:     2015-03-01T12:00:00Z
-changed:     2015-03-10T14:00:00Z
+var TestEntityToTextOutput = `handle:   XXXX
+ids:      
+roles:    
+person:   Joe User
+e-mail:   joe.user@example.com
+address:  Av Naçoes Unidas, 11541, 7 andar, Sao Paulo, SP, 04578-000, BR
+phone:    tel:+55-11-5509-3506;ext=3506
+created:  20150301
+changed:  20150310
 
-nic-hdl-br: XXXX
-person: Joe User
-e-mail: joe.user@example.com
-address: Av Naçoes Unidas, 11541, 7 andar, Sao Paulo, SP, 04578-000, BR
-phone: tel:+55-11-5509-3506;ext=3506
-created: 2015-03-01T12:00:00Z
-changed: 2015-03-10T14:00:00Z
 `
 
 func TestEntityToText(t *testing.T) {
@@ -39,7 +32,7 @@ func TestEntityToText(t *testing.T) {
 				[]interface{}{"email", struct{ Type string }{Type: "work"}, "text", "joe.user@example.com"},
 				[]interface{}{"lang", struct{ Pref string }{Pref: "1"}, "language-tag", "pt"},
 				[]interface{}{"adr", struct{ Type string }{Type: "work"}, "text",
-					[]string{
+					[]interface{}{
 						"Av Naçoes Unidas", "11541", "7 andar", "Sao Paulo", "SP", "04578-000", "BR",
 					},
 				},
@@ -60,7 +53,7 @@ func TestEntityToText(t *testing.T) {
 						[]interface{}{"email", struct{ Type string }{Type: "work"}, "text", "joe.user@example.com"},
 						[]interface{}{"lang", struct{ Pref string }{Pref: "1"}, "language-tag", "pt"},
 						[]interface{}{"adr", struct{ Type string }{Type: "work"}, "text",
-							[]string{
+							[]interface{}{
 								"Av Naçoes Unidas", "11541", "7 andar", "Sao Paulo", "SP", "04578-000", "BR",
 							},
 						},
@@ -90,5 +83,6 @@ func TestEntityToText(t *testing.T) {
 		for _, l := range diff(TestEntityToTextOutput, string(w.Content)) {
 			t.Log(l)
 		}
+		t.Fatal()
 	}
 }

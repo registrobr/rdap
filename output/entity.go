@@ -3,7 +3,6 @@ package output
 import (
 	"io"
 	"text/template"
-	"time"
 
 	"github.com/registrobr/rdap-client/protocol"
 )
@@ -14,7 +13,6 @@ type Entity struct {
 	CreatedAt string
 	UpdatedAt string
 
-	ContactInfo   ContactInfo
 	ContactsInfos []ContactInfo
 }
 
@@ -24,7 +22,7 @@ func (e *Entity) AddContact(c ContactInfo) {
 
 func (e *Entity) setDates() {
 	for _, event := range e.Entity.Events {
-		date := event.Date.Format(time.RFC3339)
+		date := event.Date.Format("20060102")
 
 		switch event.Action {
 		case protocol.EventActionRegistration:
@@ -37,10 +35,11 @@ func (e *Entity) setDates() {
 
 func (e *Entity) ToText(wr io.Writer) error {
 	e.setDates()
-	e.ContactInfo.setContact(*e.Entity)
-	AddContacts(e, e.Entity.Entities)
+	var contactInfo ContactInfo
+	contactInfo.setContact(*e.Entity)
+	e.ContactsInfos = append(e.ContactsInfos, contactInfo)
 
-	t, err := template.New("entity template").Parse(entityTmpl)
+	t, err := template.New("entity template").Parse(contactTmpl)
 	if err != nil {
 		return err
 	}
