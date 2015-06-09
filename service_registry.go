@@ -109,21 +109,24 @@ func (s serviceRegistry) matchIPNetwork(network *net.IPNet) (uris []string, err 
 // See http://tools.ietf.org/html/rfc7484#section-5.1
 //     http://tools.ietf.org/html/rfc7484#section-5.2
 func (s serviceRegistry) matchIP(ip net.IP) (uris []string, err error) {
+	size := 0
+
 	for _, service := range s.Services {
 		for _, entry := range service.entries() {
-			_, ipNet, err := net.ParseCIDR(entry)
+			_, ipnet, err := net.ParseCIDR(entry)
 
 			if err != nil {
 				return nil, err
 			}
 
-			if ipNet.Contains(ip) {
-				return service.uris(), nil
+			if mask, _ := ipnet.Mask.Size(); ipnet.Contains(ip) && mask > size {
+				uris = service.uris()
+				size = mask
 			}
 		}
 	}
 
-	return nil, nil
+	return uris, nil
 }
 
 // MatchDomain iterates through a list of services looking for the label-wise
