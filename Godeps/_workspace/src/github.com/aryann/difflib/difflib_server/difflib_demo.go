@@ -18,13 +18,14 @@ package main
 
 import (
 	"fmt"
-	"github.com/registrobr/rdap-client/Godeps/_workspace/src/github.com/aryann/difflib"
 	"html"
 	"html/template"
 	"io/ioutil"
 	"net/http"
 	"os"
 	"strings"
+
+	"github.com/registrobr/rdap/Godeps/_workspace/src/github.com/aryann/difflib"
 )
 
 var hostPort = "localhost:8080"

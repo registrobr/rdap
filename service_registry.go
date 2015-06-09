@@ -1,13 +1,41 @@
-package bootstrap
+package client
 
 import (
 	"math"
 	"net"
 	"strconv"
 	"strings"
+	"time"
 
-	"github.com/registrobr/rdap-client/Godeps/_workspace/src/github.com/miekg/dns/idn"
+	"github.com/registrobr/rdap/Godeps/_workspace/src/github.com/miekg/dns/idn"
 )
+
+const version = "1.0"
+
+// ServiceRegistry reflects the structure of a RDAP Bootstrap Service
+// Registry.
+//
+// See http://tools.ietf.org/html/rfc7484#section-10.2
+type serviceRegistry struct {
+	Version     string    `json:"version"`
+	Publication time.Time `json:"publication"`
+	Description string    `json:"description,omitempty"`
+	Services    []service `json:"services"`
+}
+
+// service is an array composed by two items. The first one is a list of
+// entries and the second one is a list of URIs.
+type service [2][]string
+
+// entries is a helper that returns the list of entries of a service
+func (s service) entries() []string {
+	return s[0]
+}
+
+// uris is a helper that returns the list of URIs of a service
+func (s service) uris() []string {
+	return s[1]
+}
 
 // MatchAS iterates through a list of services looking for the more
 // specific range to which an AS number "asn" belongs.
@@ -133,4 +161,18 @@ func (s serviceRegistry) matchDomain(fqdn string) (uris []string, err error) {
 	}
 
 	return uris, nil
+}
+
+type prioritizeHTTPS []string
+
+func (v prioritizeHTTPS) Len() int {
+	return len(v)
+}
+
+func (v prioritizeHTTPS) Swap(i, j int) {
+	v[i], v[j] = v[j], v[i]
+}
+
+func (v prioritizeHTTPS) Less(i, j int) bool {
+	return strings.Split(v[i], ":")[0] == "https"
 }

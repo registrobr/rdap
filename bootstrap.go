@@ -1,4 +1,4 @@
-package bootstrap
+package client
 
 import (
 	"encoding/json"
@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"sort"
 
-	"github.com/registrobr/rdap-client/Godeps/_workspace/src/github.com/gregjones/httpcache"
+	"github.com/registrobr/rdap/Godeps/_workspace/src/github.com/gregjones/httpcache"
 )
 
 type kind string
@@ -21,29 +21,29 @@ const (
 	RDAPBootstrap      = "https://data.iana.org/rdap/%s.json"
 )
 
-type Client struct {
+type Bootstrap struct {
 	httpClient  *http.Client
 	cacheKey    string
 	Bootstrap   string
 	reloadCache bool
 }
 
-func NewClient(httpClient *http.Client) *Client {
-	return &Client{
+func NewBootstrap(httpClient *http.Client) *Bootstrap {
+	return &Bootstrap{
 		Bootstrap:  RDAPBootstrap,
 		httpClient: httpClient,
 	}
 }
 
-func (c *Client) Domain(fqdn string) ([]string, error) {
+func (c *Bootstrap) Domain(fqdn string) ([]string, error) {
 	return c.query(dns, fqdn)
 }
 
-func (c *Client) ASN(as uint64) ([]string, error) {
+func (c *Bootstrap) ASN(as uint64) ([]string, error) {
 	return c.query(asn, as)
 }
 
-func (c *Client) IPNetwork(ipnet *net.IPNet) ([]string, error) {
+func (c *Bootstrap) IPNetwork(ipnet *net.IPNet) ([]string, error) {
 	kind := ipv4
 
 	if ipnet.IP.To4() == nil {
@@ -53,7 +53,7 @@ func (c *Client) IPNetwork(ipnet *net.IPNet) ([]string, error) {
 	return c.query(kind, ipnet)
 }
 
-func (c *Client) IP(ip net.IP) ([]string, error) {
+func (c *Bootstrap) IP(ip net.IP) ([]string, error) {
 	kind := ipv4
 
 	if ip.To4() == nil {
@@ -63,7 +63,7 @@ func (c *Client) IP(ip net.IP) ([]string, error) {
 	return c.query(kind, ip)
 }
 
-func (c *Client) checkDomain(fqdn string, cached bool, r serviceRegistry) (uris []string, err error) {
+func (c *Bootstrap) checkDomain(fqdn string, cached bool, r serviceRegistry) (uris []string, err error) {
 	uris, err = r.matchDomain(fqdn)
 	if err != nil {
 		return
@@ -100,7 +100,7 @@ func (c *Client) checkDomain(fqdn string, cached bool, r serviceRegistry) (uris 
 	return r.matchDomain(fqdn)
 }
 
-func (c *Client) query(kind kind, identifier interface{}) ([]string, error) {
+func (c *Bootstrap) query(kind kind, identifier interface{}) ([]string, error) {
 	uris := []string{}
 	r := serviceRegistry{}
 	uri := fmt.Sprintf(c.Bootstrap, kind)
@@ -150,7 +150,7 @@ func (c *Client) query(kind kind, identifier interface{}) ([]string, error) {
 	return uris, nil
 }
 
-func (c *Client) fetch(uri string) (_ io.ReadCloser, cached bool, err error) {
+func (c *Bootstrap) fetch(uri string) (_ io.ReadCloser, cached bool, err error) {
 	req, err := http.NewRequest("GET", uri, nil)
 
 	if err != nil {

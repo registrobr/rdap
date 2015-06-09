@@ -4,7 +4,7 @@ import (
 	"io"
 	"text/template"
 
-	"github.com/registrobr/rdap-client/protocol"
+	"github.com/registrobr/rdap/protocol"
 )
 
 type IPNetwork struct {

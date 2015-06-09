@@ -1,4 +1,4 @@
-package handler
+package client
 
 import (
 	"io"
@@ -7,9 +7,7 @@ import (
 	"regexp"
 	"strconv"
 
-	"github.com/registrobr/rdap-client/bootstrap"
-	"github.com/registrobr/rdap-client/client"
-	"github.com/registrobr/rdap-client/output"
+	"github.com/registrobr/rdap/output"
 )
 
 var isFQDN = regexp.MustCompile(`^(([[:alnum:]](([[:alnum:]]|\-){0,61}[[:alnum:]])?\.)*[[:alnum:]](([[:alnum:]]|\-){0,61}[[:alnum:]])?)?(\.)?$`)
@@ -17,7 +15,7 @@ var isFQDN = regexp.MustCompile(`^(([[:alnum:]](([[:alnum:]]|\-){0,61}[[:alnum:]
 type Handler struct {
 	URIs       []string
 	HTTPClient *http.Client
-	Bootstrap  *bootstrap.Client
+	Bootstrap  *Bootstrap
 	Writer     io.Writer
 }
 
@@ -62,7 +60,7 @@ func (h *Handler) ASN(object string) (bool, error) {
 		}
 	}
 
-	r, err := client.NewClient(uris, h.HTTPClient).ASN(asn)
+	r, err := NewClient(uris, h.HTTPClient).ASN(asn)
 
 	if err != nil {
 		return true, err
@@ -81,7 +79,7 @@ func (h *Handler) Entity(object string) (bool, error) {
 	// Note that there is no bootstrap for entity, see [1]
 	// [1] - https://tools.ietf.org/html/rfc7484#section-6
 
-	r, err := client.NewClient(h.URIs, h.HTTPClient).Entity(object)
+	r, err := NewClient(h.URIs, h.HTTPClient).Entity(object)
 	if err != nil {
 		return true, err
 	}
@@ -112,7 +110,7 @@ func (h *Handler) IPNetwork(object string) (bool, error) {
 		}
 	}
 
-	r, err := client.NewClient(uris, h.HTTPClient).IPNetwork(cidr)
+	r, err := NewClient(uris, h.HTTPClient).IPNetwork(cidr)
 
 	if err != nil {
 		return true, err
@@ -145,7 +143,7 @@ func (h *Handler) IP(object string) (bool, error) {
 		}
 	}
 
-	r, err := client.NewClient(uris, h.HTTPClient).IP(ip)
+	r, err := NewClient(uris, h.HTTPClient).IP(ip)
 	if err != nil {
 		return true, err
 	}
@@ -175,7 +173,7 @@ func (h *Handler) Domain(object string) (bool, error) {
 		}
 	}
 
-	r, err := client.NewClient(uris, h.HTTPClient).Domain(object)
+	r, err := NewClient(uris, h.HTTPClient).Domain(object)
 
 	if err != nil {
 		return true, err

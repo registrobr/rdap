@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/registrobr/rdap-client/protocol"
+	"github.com/registrobr/rdap/protocol"
 )
 
 var TestAsToTextOutput = `aut-num:     a_123456-NICBR

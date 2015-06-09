@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/registrobr/rdap-client/protocol"
+	"github.com/registrobr/rdap/protocol"
 )
 
 const contactTmpl = `{{range .ContactsInfos}}handle:   {{.Handle}}

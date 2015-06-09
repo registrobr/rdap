@@ -3,9 +3,10 @@ package idn
 
 import (
 	"bytes"
-	"github.com/registrobr/rdap-client/Godeps/_workspace/src/github.com/miekg/dns"
 	"strings"
 	"unicode"
+
+	"github.com/registrobr/rdap/Godeps/_workspace/src/github.com/miekg/dns"
 )
 
 // Implementation idea from RFC itself and from from IDNA::Punycode created by

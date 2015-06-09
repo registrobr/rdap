@@ -7,15 +7,13 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/registrobr/rdap-client/Godeps/_workspace/src/github.com/miekg/dns/idn"
-	"github.com/registrobr/rdap-client/protocol"
+	"github.com/registrobr/rdap/Godeps/_workspace/src/github.com/miekg/dns/idn"
+	"github.com/registrobr/rdap/protocol"
 )
 
-type kind string
-
 const (
-	dns    kind = "domain"
-	asn    kind = "autnum"
+	domain kind = "domain"
+	autnum kind = "autnum"
 	ip     kind = "ip"
 	entity kind = "entity"
 )
@@ -36,7 +34,7 @@ func (c *Client) Domain(fqdn string) (*protocol.DomainResponse, error) {
 	r := &protocol.DomainResponse{}
 	fqdn = idn.ToPunycode(strings.ToLower(fqdn))
 
-	if err := c.query(dns, fqdn, r); err != nil {
+	if err := c.query(domain, fqdn, r); err != nil {
 		return nil, err
 	}
 
@@ -46,7 +44,7 @@ func (c *Client) Domain(fqdn string) (*protocol.DomainResponse, error) {
 func (c *Client) ASN(as uint64) (*protocol.ASResponse, error) {
 	r := &protocol.ASResponse{}
 
-	if err := c.query(asn, as, r); err != nil {
+	if err := c.query(autnum, as, r); err != nil {
 		return nil, err
 	}
 

@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/registrobr/rdap-client/Godeps/_workspace/src/github.com/miekg/dns"
+	"github.com/registrobr/rdap/Godeps/_workspace/src/github.com/miekg/dns"
 )
 
 const TypeISBN uint16 = 0x0F01

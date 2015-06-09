@@ -1,4 +1,4 @@
-package bootstrap
+package client
 
 import (
 	"encoding/json"

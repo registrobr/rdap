@@ -12,10 +12,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/registrobr/rdap-client/protocol"
+	"github.com/registrobr/rdap/protocol"
 )
 
-func TestHandleHTTPStatusCode(t *testing.T) {
+func TestClientHandleHTTPStatusCode(t *testing.T) {
 	tests := []struct {
 		description string
 		expectedErr error
@@ -26,15 +26,15 @@ func TestHandleHTTPStatusCode(t *testing.T) {
 		{
 			description: "it should return a nil error",
 			expectedErr: nil,
-			kind:        dns,
+			kind:        domain,
 			err: &protocol.Error{
 				ErrorCode: http.StatusOK,
 			},
 		},
 		{
 			description: "it should got a not found error",
-			expectedErr: fmt.Errorf("%s not found.", dns),
-			kind:        dns,
+			expectedErr: fmt.Errorf("%s not found.", domain),
+			kind:        domain,
 			err: &protocol.Error{
 				ErrorCode: http.StatusNotFound,
 			},
@@ -43,7 +43,7 @@ func TestHandleHTTPStatusCode(t *testing.T) {
 			description: "it should got an unexpected response error",
 			expectedErr: fmt.Errorf("unexpected response: %d %s",
 				http.StatusForbidden, http.StatusText(http.StatusForbidden)),
-			kind: dns,
+			kind: domain,
 			err: &protocol.Error{
 				ErrorCode: http.StatusForbidden,
 			},
@@ -56,7 +56,7 @@ func TestHandleHTTPStatusCode(t *testing.T) {
 				http.StatusText(http.StatusPreconditionFailed),
 				"Request error",
 				strings.Join([]string{"Error 1", "Error 2", "Error 3"}, "\n  ")),
-			kind: dns,
+			kind: domain,
 			err: &protocol.Error{
 				ErrorCode:   http.StatusPreconditionFailed,
 				Title:       "Request error",
@@ -105,7 +105,7 @@ func TestHandleHTTPStatusCode(t *testing.T) {
 	}
 }
 
-func TestFetch(t *testing.T) {
+func TestClientFetch(t *testing.T) {
 	tests := []struct {
 		description   string
 		uri           string
@@ -141,7 +141,7 @@ func TestFetch(t *testing.T) {
 	}
 }
 
-func TestQuery(t *testing.T) {
+func TestClientQuery(t *testing.T) {
 	tests := []struct {
 		description    string
 		kind           kind
@@ -154,28 +154,28 @@ func TestQuery(t *testing.T) {
 	}{
 		{
 			description:   "it should return an error due to an invalid uri",
-			kind:          dns,
+			kind:          domain,
 			identifier:    "example.br",
 			uris:          []string{"%gh&%ij"},
 			expectedError: fmt.Errorf("error(s) fetching RDAP data from example.br:\n  parse %%gh&%%ij/domain/example.br: invalid URL escape \"%%gh\""),
 		},
 		{
 			description:   "it should return an error due to invalid json in rdap response",
-			kind:          dns,
+			kind:          domain,
 			identifier:    "example.br",
 			responseBody:  "invalid",
 			expectedError: fmt.Errorf("error(s) fetching RDAP data from example.br:\n  invalid character 'i' looking for beginning of value"),
 		},
 		{
 			description:    "it should return a valid domain object",
-			kind:           dns,
+			kind:           domain,
 			identifier:     "example.br",
 			responseBody:   "{\"objectClassName\": \"domain\"}",
 			expectedObject: map[string]interface{}{"objectClassName": "domain"},
 		},
 		{
 			description:   "it should return an error due to non-ok http status code in response",
-			kind:          dns,
+			kind:          domain,
 			identifier:    "example.br",
 			status:        http.StatusNotFound,
 			responseBody:  "{}",
@@ -216,7 +216,7 @@ func TestQuery(t *testing.T) {
 	}
 }
 
-func TestQueriers(t *testing.T) {
+func TestClientQueriers(t *testing.T) {
 	tests := []struct {
 		description    string
 		kind           kind
@@ -228,14 +228,14 @@ func TestQueriers(t *testing.T) {
 	}{
 		{
 			description:    "it should return the right object when matching a domain",
-			kind:           dns,
+			kind:           domain,
 			identifier:     "example.br",
 			responseBody:   "{\"objectClassName\": \"domain\"}",
 			expectedObject: &protocol.DomainResponse{ObjectClassName: "domain"},
 		},
 		{
 			description:    "it should return the right uris when matching a domain",
-			kind:           asn,
+			kind:           autnum,
 			identifier:     uint64(1),
 			responseBody:   "{\"objectClassName\": \"as\"}",
 			expectedObject: &protocol.ASResponse{ObjectClassName: "as"},
@@ -276,14 +276,14 @@ func TestQueriers(t *testing.T) {
 		},
 		{
 			description:   "it should return an error when matching a domain due to an invalid uri",
-			kind:          dns,
+			kind:          domain,
 			identifier:    "example.br",
 			uris:          []string{"%gh&%ij"},
 			expectedError: fmt.Errorf("error(s) fetching RDAP data from example.br:\n  parse %%gh&%%ij/domain/example.br: invalid URL escape \"%%gh\""),
 		},
 		{
 			description:   "it should return an error when matching an as number due to an invalid uri",
-			kind:          asn,
+			kind:          autnum,
 			identifier:    uint64(1),
 			uris:          []string{"%gh&%ij"},
 			expectedError: fmt.Errorf("error(s) fetching RDAP data from 1:\n  parse %%gh&%%ij/autnum/1: invalid URL escape \"%%gh\""),
@@ -334,9 +334,9 @@ func TestQueriers(t *testing.T) {
 		)
 
 		switch test.kind {
-		case dns:
+		case domain:
 			object, err = c.Domain(test.identifier.(string))
-		case asn:
+		case autnum:
 			object, err = c.ASN(test.identifier.(uint64))
 		case kind("ipnetwork"):
 			object, err = c.IPNetwork(test.identifier.(*net.IPNet))

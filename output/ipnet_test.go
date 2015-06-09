@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/registrobr/rdap-client/protocol"
+	"github.com/registrobr/rdap/protocol"
 )
 
 var TestIPNetworkToTextOutput = `inetnum:       (IPNetwork)

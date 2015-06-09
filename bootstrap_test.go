@@ -1,4 +1,4 @@
-package bootstrap
+package client
 
 import (
 	"fmt"
@@ -9,10 +9,10 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/registrobr/rdap-client/Godeps/_workspace/src/github.com/gregjones/httpcache"
+	"github.com/registrobr/rdap/Godeps/_workspace/src/github.com/gregjones/httpcache"
 )
 
-func TestFetch(t *testing.T) {
+func TestBootstrapFetch(t *testing.T) {
 	tests := []struct {
 		description   string
 		uri           string
@@ -27,7 +27,7 @@ func TestFetch(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		c := NewClient(nil)
+		c := NewBootstrap(nil)
 		body := ""
 		r, _, err := c.fetch(test.uri)
 
@@ -48,7 +48,7 @@ func TestFetch(t *testing.T) {
 	}
 }
 
-func TestQuery(t *testing.T) {
+func TestBootstrapQuery(t *testing.T) {
 	tests := []struct {
 		description   string
 		bootstrap     string
@@ -134,7 +134,7 @@ func TestQuery(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		c := NewClient(nil)
+		c := NewBootstrap(nil)
 
 		if test.bootstrap != "" {
 			c.Bootstrap = test.bootstrap
@@ -162,7 +162,7 @@ func TestQuery(t *testing.T) {
 	}
 }
 
-func TestQueriers(t *testing.T) {
+func TestBootstrapQueriers(t *testing.T) {
 	tests := []struct {
 		description   string
 		bootstrap     string
@@ -223,7 +223,7 @@ func TestQueriers(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		c := NewClient(nil)
+		c := NewBootstrap(nil)
 		ts := httptest.NewServer(
 			http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				w.Write([]byte(test.responseBody))
@@ -262,7 +262,7 @@ func TestQueriers(t *testing.T) {
 	}
 }
 
-func TestDomainCache(t *testing.T) {
+func TestBootstrapDomainCache(t *testing.T) {
 	cachedBody := `{"version":"1.0","services":[[["net"], ["rdap-domain.example.net"]]]}`
 	freshBody := `{
 		"version":"1.0",
@@ -287,7 +287,7 @@ func TestDomainCache(t *testing.T) {
 		Transport: httpcache.NewMemoryCacheTransport(),
 	}
 
-	c := NewClient(httpClient)
+	c := NewBootstrap(httpClient)
 	c.Bootstrap = server.URL + "/%s"
 
 	uris, err := c.query(dns, "registro.br")
