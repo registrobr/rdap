@@ -21,7 +21,7 @@ type Handler struct {
 	Writer     io.Writer
 }
 
-func (h *Handler) Query(object string) (bool, error) {
+func (h *Handler) Query(object string) error {
 	handlers := []func(object string) (bool, error){
 		h.ASN,
 		h.IP,
@@ -30,14 +30,10 @@ func (h *Handler) Query(object string) (bool, error) {
 		h.Entity,
 	}
 
-	ok := false
-
 	for _, handler := range handlers {
-		var err error
-		ok, err = handler(object)
-
+		ok, err := handler(object)
 		if err != nil {
-			return ok, err
+			return err
 		}
 
 		if ok {
@@ -45,7 +41,7 @@ func (h *Handler) Query(object string) (bool, error) {
 		}
 	}
 
-	return ok, nil
+	return nil
 }
 
 func (h *Handler) ASN(object string) (bool, error) {
