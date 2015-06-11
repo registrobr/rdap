@@ -104,7 +104,7 @@ func (c *Client) handleHTTPStatusCode(kind kind, response *http.Response) error 
 		responseErr.ErrorCode,
 		http.StatusText(responseErr.ErrorCode),
 		responseErr.Title,
-		strings.Join(responseErr.Description, "\n  "))
+		strings.Join(responseErr.Description, ", "))
 }
 
 func (c *Client) query(kind kind, identifier interface{}, object interface{}) (err error) {
@@ -132,7 +132,10 @@ func (c *Client) query(kind kind, identifier interface{}, object interface{}) (e
 		return nil
 	}
 
-	return fmt.Errorf("error(s) fetching RDAP data from %v:\n  %s", identifier, strings.Join(errors, "\n  "))
+	return fmt.Errorf("error(s) fetching RDAP data from %v: %s",
+		identifier,
+		strings.Join(errors, ", "),
+	)
 }
 
 func (c *Client) fetch(uri string) (response *http.Response, err error) {
