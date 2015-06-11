@@ -120,7 +120,7 @@ func TestASToText(t *testing.T) {
 		for _, l := range diff(TestAsToTextOutput, string(w.Content)) {
 			t.Log(l)
 		}
-		t.Fatal()
+		t.Fatal("error")
 	}
 }
 

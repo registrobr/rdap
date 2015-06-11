@@ -139,6 +139,6 @@ func TestDomainToText(t *testing.T) {
 		for _, l := range diff(TestDomainToTextOutput, string(w.Content)) {
 			t.Log(l)
 		}
-		t.Fatal()
+		t.Fatal("error")
 	}
 }

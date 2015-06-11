@@ -83,6 +83,6 @@ func TestEntityToText(t *testing.T) {
 		for _, l := range diff(TestEntityToTextOutput, string(w.Content)) {
 			t.Log(l)
 		}
-		t.Fatal()
+		t.Fatal("error")
 	}
 }

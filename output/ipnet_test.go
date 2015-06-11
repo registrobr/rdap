@@ -99,6 +99,6 @@ func TestIPNetworkToText(t *testing.T) {
 		for _, l := range diff(TestIPNetworkToTextOutput, string(w.Content)) {
 			t.Log(l)
 		}
-		t.Fatal()
+		t.Fatal("error")
 	}
 }
