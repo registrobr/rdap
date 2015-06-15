@@ -1,6 +1,6 @@
 package output
 
-var ipnetTmpl = `inetnum:       (IPNetwork)
+var ipnetTmpl = `inetnum:       {{.Inetnum}}
 aut-num:       {{.IPNetwork.Handle}}
 abuse-c:       (handle)
 owner:         {{.IPNetwork.Name}}

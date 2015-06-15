@@ -7,7 +7,7 @@ import (
 	"github.com/registrobr/rdap/protocol"
 )
 
-var TestIPNetworkToTextOutput = `inetnum:       (IPNetwork)
+var TestIPNetworkToTextOutput = `inetnum:       200.160.3.0/24
 aut-num:       ip_123456-NICBR
 abuse-c:       (handle)
 owner:         

@@ -2,6 +2,7 @@ package output
 
 import (
 	"io"
+	"net"
 	"text/template"
 
 	"github.com/registrobr/rdap/protocol"
@@ -9,6 +10,7 @@ import (
 
 type IPNetwork struct {
 	IPNetwork *protocol.IPNetwork
+	Inetnum   string
 
 	CreatedAt string
 	UpdatedAt string
@@ -33,8 +35,23 @@ func (i *IPNetwork) setDates() {
 	}
 }
 
+func (i *IPNetwork) setInetnum() {
+	start := net.ParseIP(i.IPNetwork.StartAddress)
+	end := net.ParseIP(i.IPNetwork.EndAddress)
+	mask := make(net.IPMask, len(start))
+
+	for j := 0; j < len(start); j++ {
+		mask[j] = start[j] | ^end[j]
+	}
+
+	cidr := net.IPNet{start, mask}
+
+	i.Inetnum = cidr.String()
+}
+
 func (i *IPNetwork) ToText(wr io.Writer) error {
 	i.setDates()
+	i.setInetnum()
 	AddContacts(i, i.IPNetwork.Entities)
 
 	for _, entity := range i.IPNetwork.Entities {

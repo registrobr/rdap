@@ -24,6 +24,7 @@ type Client struct {
 }
 
 func NewClient(uris []string, httpClient *http.Client) *Client {
+
 	return &Client{
 		uris:       uris,
 		httpClient: httpClient,
