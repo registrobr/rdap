@@ -2,15 +2,27 @@ package output
 
 import "text/template"
 
-const domainTmpl = `domain:   {{.Domain.LDHName}}
-{{range .Domain.Nameservers}}nserver:  {{.LDHName}} {{.HostStatus}}
-{{end}}{{range .DS}}dsrecord: {{.KeyTag}} {{.Algorithm | dsAlgorithm}} {{.Digest}}
-dsstatus: {{.CreatedAt}} {{.DSStatus}}
-{{end}}created:  {{.CreatedAt}}
-changed:  {{.UpdatedAt}}
-{{range .Domain.Status}}status:   {{.}}
-{{end}}
-` + contactTmpl
+const domainTmpl = `
+% Copyright (c) Nic.br
+%  The use of the data below is only permitted as described in
+%  full by the terms of use (http://registro.br/termo/en.html),
+%  being prohibited its distribution, commercialization or
+%  reproduction, in particular, to use it for advertising or
+%  any similar purpose.
+%  {{.LocalTime}}
+
+domain:   {{.Domain}}
+owner:    {{.Owner}}
+`
+
+// {{range .Domain.Nameservers}}nserver:  {{.LDHName}} {{.HostStatus}}
+// {{end}}{{range .DS}}dsrecord: {{.KeyTag}} {{.Algorithm | dsAlgorithm}} {{.Digest}}
+// dsstatus: {{.CreatedAt}} {{.DSStatus}}
+// {{end}}created:  {{.CreatedAt}}
+// changed:  {{.UpdatedAt}}
+// {{range .Domain.Status}}status:   {{.}}
+// {{end}}
+// ` + contactTmpl
 
 var (
 	dsAlgorithms = map[int]string{

@@ -3,6 +3,7 @@ package output
 import (
 	"io"
 	"text/template"
+	"time"
 
 	"github.com/registrobr/rdap/protocol"
 )
@@ -22,6 +23,47 @@ type Domain struct {
 type ds struct {
 	protocol.DS
 	CreatedAt string
+}
+
+type textOut struct {
+	Domain        string
+	LocalTime     string
+	Owner         string
+	OwnerId       string
+	Responsible   string
+	Address1      string
+	Address2      string
+	Country       string
+	Phone         string
+	AdminHandle   string
+	OwnerHandle   string
+	TecHandle     string
+	BillingHandle string
+	Nameservers   []struct {
+		Host       string
+		CheckedAt  string
+		LastStatus string
+		LastAAAt   string
+	}
+	DSSet []struct {
+		Record     string // keytag + algorithm + digest
+		CheckedAt  string
+		LastStatus string
+		LastOKAt   string
+	}
+	CreatedAt string
+	ChangedAt string
+	Status    string
+	Contacts  []struct {
+		Handle    string
+		Name      string
+		Email     string
+		Address1  string
+		Address2  string
+		Phone     string
+		CreatedAt string
+		ChangedAt string
+	}
 }
 
 func (d *Domain) AddContact(c ContactInfo) {
@@ -60,14 +102,24 @@ func (d *Domain) setDS() {
 }
 
 func (d *Domain) ToText(wr io.Writer) error {
-	d.setDates()
-	d.setDS()
+	txtOut := textOut{}
+	txtOut.Domain = d.Domain.UnicodeName
+	txtOut.LocalTime = time.Now().Format("2006-01-02 15:04:05 (MST -0700)")
 
-	AddContacts(d, d.Domain.Entities)
-
-	for _, entity := range d.Domain.Entities {
-		AddContacts(d, entity.Entities)
+	if contactInfo, ok := getOwner(d); ok {
+		if len(contactInfo.Persons) > 0 {
+			txtOut.Owner = contactInfo.Persons[0]
+		}
 	}
+
+	// d.setDates()
+	// d.setDS()
+
+	// AddContacts(d, d.Domain.Entities)
+
+	// for _, entity := range d.Domain.Entities {
+	// 	AddContacts(d, entity.Entities)
+	// }
 
 	t, err := template.New("domain").Funcs(domainFuncMap).Parse(domainTmpl)
 
@@ -75,5 +127,18 @@ func (d *Domain) ToText(wr io.Writer) error {
 		return err
 	}
 
-	return t.ExecuteTemplate(wr, "domain", d)
+	return t.ExecuteTemplate(wr, "domain", txtOut)
+}
+
+func getOwner(d *Domain) (contactInfo ContactInfo, ok bool) {
+	for _, e := range d.Domain.Entities {
+		for _, r := range e.Roles {
+			if r == "registrant" {
+				contactInfo.setContact(r)
+				return contactInfo, true
+			}
+		}
+	}
+
+	return
 }
