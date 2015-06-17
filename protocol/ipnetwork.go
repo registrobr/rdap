@@ -11,7 +11,7 @@ type IPNetwork struct {
 	Country         string   `json:"country"`
 	ParentHandle    string   `json:"parentHandle,omitempty"`
 	Status          []string `json:"status"`
-	Autnum          int32    `json:"nicbr_autnum,omitempty"`
+	Autnum          uint32   `json:"nicbr_autnum,omitempty"`
 	Links           []Link   `json:"links"`
 	Events          []Event  `json:"events"`
 	Entities        []Entity `json:"entities"`
