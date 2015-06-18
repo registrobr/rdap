@@ -2,6 +2,7 @@ package rdap
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net"
 	"net/http"
@@ -16,6 +17,10 @@ const (
 	autnum kind = "autnum"
 	ip     kind = "ip"
 	entity kind = "entity"
+)
+
+var (
+	ErrNotFound = errors.New("not found")
 )
 
 type Client struct {
@@ -88,7 +93,7 @@ func (c *Client) handleHTTPStatusCode(kind kind, response *http.Response) error 
 	}
 
 	if response.StatusCode == http.StatusNotFound {
-		return fmt.Errorf("%s not found", kind)
+		return ErrNotFound
 	}
 
 	if response.Header.Get("Content-Type") != "application/json" {
