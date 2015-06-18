@@ -32,7 +32,7 @@ func TestClientHandleHTTPStatusCode(t *testing.T) {
 		},
 		{
 			description: "it should got a not found error",
-			expectedErr: fmt.Errorf("%s not found", domain),
+			expectedErr: ErrNotFound,
 			kind:        domain,
 			err: &protocol.Error{
 				ErrorCode: http.StatusNotFound,
@@ -156,14 +156,14 @@ func TestClientQuery(t *testing.T) {
 			kind:          domain,
 			identifier:    "example.br",
 			uris:          []string{"%gh&%ij"},
-			expectedError: fmt.Errorf(`error(s) fetching RDAP data from example.br: parse %%gh&%%ij/domain/example.br: invalid URL escape "%%gh"`),
+			expectedError: fmt.Errorf(`parse %%gh&%%ij/domain/example.br: invalid URL escape "%%gh"`),
 		},
 		{
 			description:   "it should return an error due to invalid json in rdap response",
 			kind:          domain,
 			identifier:    "example.br",
 			responseBody:  "invalid",
-			expectedError: fmt.Errorf("error(s) fetching RDAP data from example.br: invalid character 'i' looking for beginning of value"),
+			expectedError: fmt.Errorf("invalid character 'i' looking for beginning of value"),
 		},
 		{
 			description:    "it should return a valid domain object",
@@ -178,7 +178,7 @@ func TestClientQuery(t *testing.T) {
 			identifier:    "example.br",
 			status:        http.StatusNotFound,
 			responseBody:  "{}",
-			expectedError: fmt.Errorf("error(s) fetching RDAP data from example.br: domain not found"),
+			expectedError: fmt.Errorf("not found"),
 		},
 	}
 
@@ -278,14 +278,14 @@ func TestClientQueriers(t *testing.T) {
 			kind:          domain,
 			identifier:    "example.br",
 			uris:          []string{"%gh&%ij"},
-			expectedError: fmt.Errorf("error(s) fetching RDAP data from example.br: parse %%gh&%%ij/domain/example.br: invalid URL escape \"%%gh\""),
+			expectedError: fmt.Errorf("parse %%gh&%%ij/domain/example.br: invalid URL escape \"%%gh\""),
 		},
 		{
 			description:   "it should return an error when matching an as number due to an invalid uri",
 			kind:          autnum,
 			identifier:    uint64(1),
 			uris:          []string{"%gh&%ij"},
-			expectedError: fmt.Errorf("error(s) fetching RDAP data from 1: parse %%gh&%%ij/autnum/1: invalid URL escape \"%%gh\""),
+			expectedError: fmt.Errorf("parse %%gh&%%ij/autnum/1: invalid URL escape \"%%gh\""),
 		},
 		{
 			description: "it should return an error when matching an ip network due to an invalid uri",
@@ -295,21 +295,21 @@ func TestClientQueriers(t *testing.T) {
 				return cidr
 			}(),
 			uris:          []string{"%gh&%ij"},
-			expectedError: fmt.Errorf("error(s) fetching RDAP data from 192.168.0.0/24: parse %%gh&%%ij/ip/192.168.0.0/24: invalid URL escape \"%%gh\""),
+			expectedError: fmt.Errorf("parse %%gh&%%ij/ip/192.168.0.0/24: invalid URL escape \"%%gh\""),
 		},
 		{
 			description:   "it should return an error when matching an ip due to an invalid uri",
 			kind:          ip,
 			identifier:    net.ParseIP("192.168.1.1"),
 			uris:          []string{"%gh&%ij"},
-			expectedError: fmt.Errorf("error(s) fetching RDAP data from 192.168.1.1: parse %%gh&%%ij/ip/192.168.1.1: invalid URL escape \"%%gh\""),
+			expectedError: fmt.Errorf("parse %%gh&%%ij/ip/192.168.1.1: invalid URL escape \"%%gh\""),
 		},
 		{
 			description:   "it should return an error when matching an ip due to an invalid uri",
 			kind:          entity,
 			identifier:    "example",
 			uris:          []string{"%gh&%ij"},
-			expectedError: fmt.Errorf("error(s) fetching RDAP data from example: parse %%gh&%%ij/entity/example: invalid URL escape \"%%gh\""),
+			expectedError: fmt.Errorf("parse %%gh&%%ij/entity/example: invalid URL escape \"%%gh\""),
 		},
 	}
 

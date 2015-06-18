@@ -113,35 +113,32 @@ func (c *Client) handleHTTPStatusCode(kind kind, response *http.Response) error 
 		strings.Join(responseErr.Description, ", "))
 }
 
-func (c *Client) query(kind kind, identifier interface{}, object interface{}) (err error) {
-	var errors []string
+func (c *Client) query(kind kind, identifier interface{}, object interface{}) error {
+	var lastErr error
 	for _, uri := range c.uris {
 		uri := fmt.Sprintf("%s/%s/%v", uri, kind, identifier)
 
 		res, err := c.fetch(uri)
 		if err != nil {
-			errors = append(errors, err.Error())
+			lastErr = err
 			continue
 		}
 		defer res.Body.Close()
 
 		if err := c.handleHTTPStatusCode(kind, res); err != nil {
-			errors = append(errors, err.Error())
+			lastErr = err
 			continue
 		}
 
 		if err = json.NewDecoder(res.Body).Decode(&object); err != nil {
-			errors = append(errors, err.Error())
+			lastErr = err
 			continue
 		}
 
 		return nil
 	}
 
-	return fmt.Errorf("error(s) fetching RDAP data from %v: %s",
-		identifier,
-		strings.Join(errors, ", "),
-	)
+	return lastErr
 }
 
 func (c *Client) fetch(uri string) (response *http.Response, err error) {
