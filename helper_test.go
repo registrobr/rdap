@@ -16,15 +16,25 @@ func diff(a, b interface{}) []difflib.DiffRecord {
 		strings.Split(spew.Sdump(b), "\n"))
 }
 
-func createTestServers(object interface{}, entry string) (*httptest.Server, *httptest.Server) {
+func createTestServers(object interface{}, entry string, bootstrapStatus, rdapStatus int) (*httptest.Server, *httptest.Server) {
 	rdapTS := httptest.NewServer(
 		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if rdapStatus > 0 {
+				w.WriteHeader(rdapStatus)
+				return
+			}
+
 			json.NewEncoder(w).Encode(object)
 		}),
 	)
 
 	return rdapTS, httptest.NewServer(
 		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if bootstrapStatus > 0 {
+				w.WriteHeader(bootstrapStatus)
+				return
+			}
+
 			registry := serviceRegistry{
 				Version: "1.0",
 				Services: []service{

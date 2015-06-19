@@ -2,6 +2,7 @@ package rdap
 
 import (
 	"fmt"
+	"net/http"
 
 	"reflect"
 	"testing"
@@ -11,11 +12,12 @@ import (
 
 func TestHandlerDomain(t *testing.T) {
 	tests := []struct {
-		description    string
-		identifier     string
-		bootstrapEntry string
-		expectedObject interface{}
-		expectedError  error
+		description     string
+		identifier      string
+		bootstrapEntry  string
+		bootstrapStatus int
+		expectedObject  interface{}
+		expectedError   error
 	}{
 		{
 			description:   "Domain handler should not be executed due to an invalid identifier in input",
@@ -39,10 +41,22 @@ func TestHandlerDomain(t *testing.T) {
 				LDHName:         "example.br",
 			},
 		},
+		{
+			description:     "Domain handler should return a HTTP 500 error from bootstrap server",
+			identifier:      "example.br",
+			bootstrapEntry:  "br",
+			bootstrapStatus: http.StatusInternalServerError,
+			expectedError:   fmt.Errorf("unexpected status code 500 Internal Server Error"),
+		},
 	}
 
 	for i, test := range tests {
-		ts, bs := createTestServers(test.expectedObject, test.bootstrapEntry)
+		ts, bs := createTestServers(
+			test.expectedObject,
+			test.bootstrapEntry,
+			test.bootstrapStatus,
+			0,
+		)
 
 		h := Handler{
 			URIs: []string{ts.URL},
@@ -72,11 +86,12 @@ func TestHandlerDomain(t *testing.T) {
 
 func TestHandlerASN(t *testing.T) {
 	tests := []struct {
-		description    string
-		identifier     string
-		bootstrapEntry string
-		expectedObject interface{}
-		expectedError  error
+		description     string
+		identifier      string
+		bootstrapEntry  string
+		bootstrapStatus int
+		expectedObject  interface{}
+		expectedError   error
 	}{
 		{
 			description:   "ASN handler should not be executed due to an invalid identifier in input",
@@ -102,10 +117,22 @@ func TestHandlerASN(t *testing.T) {
 				EndAutnum:       16,
 			},
 		},
+		{
+			description:     "ASN handler should return a HTTP 500 error from bootstrap server",
+			identifier:      "1",
+			bootstrapEntry:  "1-16",
+			bootstrapStatus: http.StatusInternalServerError,
+			expectedError:   fmt.Errorf("unexpected status code 500 Internal Server Error"),
+		},
 	}
 
 	for i, test := range tests {
-		ts, bs := createTestServers(test.expectedObject, test.bootstrapEntry)
+		ts, bs := createTestServers(
+			test.expectedObject,
+			test.bootstrapEntry,
+			test.bootstrapStatus,
+			0,
+		)
 
 		h := Handler{
 			URIs: []string{ts.URL},
@@ -135,11 +162,12 @@ func TestHandlerASN(t *testing.T) {
 
 func TestHandlerIP(t *testing.T) {
 	tests := []struct {
-		description    string
-		identifier     string
-		bootstrapEntry string
-		expectedObject interface{}
-		expectedError  error
+		description     string
+		identifier      string
+		bootstrapEntry  string
+		bootstrapStatus int
+		expectedObject  interface{}
+		expectedError   error
 	}{
 		{
 			description:   "IP handler should not be executed due to an invalid identifier in input",
@@ -165,10 +193,22 @@ func TestHandlerIP(t *testing.T) {
 				EndAddress:      "192.168.0.255",
 			},
 		},
+		{
+			description:     "IP handler should return a HTTP 500 error from bootstrap server",
+			identifier:      "192.168.0.1",
+			bootstrapEntry:  "192.168.0.0/24",
+			bootstrapStatus: http.StatusInternalServerError,
+			expectedError:   fmt.Errorf("unexpected status code 500 Internal Server Error"),
+		},
 	}
 
 	for i, test := range tests {
-		ts, bs := createTestServers(test.expectedObject, test.bootstrapEntry)
+		ts, bs := createTestServers(
+			test.expectedObject,
+			test.bootstrapEntry,
+			test.bootstrapStatus,
+			0,
+		)
 
 		h := Handler{
 			URIs: []string{ts.URL},
@@ -198,11 +238,12 @@ func TestHandlerIP(t *testing.T) {
 
 func TestHandlerIPNetwork(t *testing.T) {
 	tests := []struct {
-		description    string
-		identifier     string
-		bootstrapEntry string
-		expectedObject interface{}
-		expectedError  error
+		description     string
+		identifier      string
+		bootstrapEntry  string
+		bootstrapStatus int
+		expectedObject  interface{}
+		expectedError   error
 	}{
 		{
 			description:   "IP handler should not be executed due to an invalid identifier in input",
@@ -228,10 +269,21 @@ func TestHandlerIPNetwork(t *testing.T) {
 				EndAddress:      "192.168.0.255",
 			},
 		},
+		{
+			identifier:      "192.168.0.0/24",
+			bootstrapEntry:  "192.168.0.0/16",
+			bootstrapStatus: http.StatusInternalServerError,
+			expectedError:   fmt.Errorf("unexpected status code 500 Internal Server Error"),
+		},
 	}
 
 	for i, test := range tests {
-		ts, bs := createTestServers(test.expectedObject, test.bootstrapEntry)
+		ts, bs := createTestServers(
+			test.expectedObject,
+			test.bootstrapEntry,
+			test.bootstrapStatus,
+			0,
+		)
 
 		h := Handler{
 			URIs: []string{ts.URL},
@@ -261,11 +313,12 @@ func TestHandlerIPNetwork(t *testing.T) {
 
 func TestHandlerEntity(t *testing.T) {
 	tests := []struct {
-		description    string
-		identifier     string
-		bootstrapEntry string
-		expectedObject interface{}
-		expectedError  error
+		description     string
+		identifier      string
+		bootstrapEntry  string
+		bootstrapStatus int
+		expectedObject  interface{}
+		expectedError   error
 	}{
 		{
 			description: "Entity handler should return a valid RDAP response",
@@ -278,7 +331,12 @@ func TestHandlerEntity(t *testing.T) {
 	}
 
 	for i, test := range tests {
-		ts, bs := createTestServers(test.expectedObject, test.bootstrapEntry)
+		ts, bs := createTestServers(
+			test.expectedObject,
+			test.bootstrapEntry,
+			test.bootstrapStatus,
+			0,
+		)
 
 		h := Handler{
 			URIs: []string{ts.URL},
@@ -310,7 +368,9 @@ func TestHandlerQuery(t *testing.T) {
 	tests := []struct {
 		description    string
 		identifier     string
+		rdapStatus     int
 		expectedObject interface{}
+		expectedError  error
 	}{
 		{
 			description:    "Generic handler should return an object of type protocol.ASResponse",
@@ -337,10 +397,16 @@ func TestHandlerQuery(t *testing.T) {
 			identifier:     "someone",
 			expectedObject: protocol.Entity{},
 		},
+		{
+			description:   "Generic handler should return an HTTP 500 error from RDAP server",
+			identifier:    "someone",
+			rdapStatus:    http.StatusInternalServerError,
+			expectedError: fmt.Errorf("unexpected response: 500 Internal Server Error"),
+		},
 	}
 
 	for i, test := range tests {
-		ts, _ := createTestServers(test.expectedObject, "")
+		ts, _ := createTestServers(test.expectedObject, "", 0, test.rdapStatus)
 
 		h := Handler{
 			URIs: []string{ts.URL},
@@ -348,15 +414,17 @@ func TestHandlerQuery(t *testing.T) {
 
 		object, err := h.Query(test.identifier)
 
-		if err != nil && err != ErrInvalidQuery {
-			t.Fatal("unexpected error:", err)
-		}
+		if test.expectedError != nil {
+			if fmt.Sprintf("%v", test.expectedError) != fmt.Sprintf("%v", err) {
+				t.Fatalf("[%d] %s: expected error “%s”, got “%s”", i, test.description, test.expectedError, err)
+			}
+		} else {
+			expectedObjType := objType(test.expectedObject)
+			objType := objType(object)
 
-		expectedObjType := objType(test.expectedObject)
-		objType := objType(object)
-
-		if expectedObjType != objType {
-			t.Fatalf("[%d] “%s” expected type “%s”, got “%s” ", i, test.description, expectedObjType, objType)
+			if expectedObjType != objType {
+				t.Fatalf("[%d] “%s” expected type “%s”, got “%s” ", i, test.description, expectedObjType, objType)
+			}
 		}
 	}
 }
