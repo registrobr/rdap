@@ -70,7 +70,7 @@ func TestHandlerDomain(t *testing.T) {
 
 		if test.expectedError != nil {
 			if fmt.Sprintf("%v", test.expectedError) != fmt.Sprintf("%v", err) {
-				t.Fatalf("[%d] %s: expected error “%s”, got “%s”", i, test.description, test.expectedError, err)
+				t.Fatalf("[%d] “%s“: expected error “%s”, got “%s”", i, test.description, test.expectedError, err)
 			}
 		} else {
 			if object != nil && !reflect.DeepEqual(test.expectedObject, *object) {
@@ -146,7 +146,7 @@ func TestHandlerASN(t *testing.T) {
 
 		if test.expectedError != nil {
 			if fmt.Sprintf("%v", test.expectedError) != fmt.Sprintf("%v", err) {
-				t.Fatalf("[%d] %s: expected error “%s”, got “%s”", i, test.description, test.expectedError, err)
+				t.Fatalf("[%d] “%s“: expected error “%s”, got “%s”", i, test.description, test.expectedError, err)
 			}
 		} else {
 			if object != nil && !reflect.DeepEqual(test.expectedObject, *object) {
@@ -222,7 +222,7 @@ func TestHandlerIP(t *testing.T) {
 
 		if test.expectedError != nil {
 			if fmt.Sprintf("%v", test.expectedError) != fmt.Sprintf("%v", err) {
-				t.Fatalf("[%d] %s: expected error “%s”, got “%s”", i, test.description, test.expectedError, err)
+				t.Fatalf("[%d] “%s“: expected error “%s”, got “%s”", i, test.description, test.expectedError, err)
 			}
 		} else {
 			if object != nil && !reflect.DeepEqual(test.expectedObject, *object) {
@@ -297,7 +297,7 @@ func TestHandlerIPNetwork(t *testing.T) {
 
 		if test.expectedError != nil {
 			if fmt.Sprintf("%v", test.expectedError) != fmt.Sprintf("%v", err) {
-				t.Fatalf("[%d] %s: expected error “%s”, got “%s”", i, test.description, test.expectedError, err)
+				t.Fatalf("[%d] “%s“: expected error “%s”, got “%s”", i, test.description, test.expectedError, err)
 			}
 		} else {
 			if object != nil && !reflect.DeepEqual(test.expectedObject, *object) {
@@ -318,7 +318,6 @@ func TestHandlerEntity(t *testing.T) {
 		bootstrapEntry  string
 		bootstrapStatus int
 		expectedObject  interface{}
-		expectedError   error
 	}{
 		{
 			description: "Entity handler should return a valid RDAP response",
@@ -348,18 +347,16 @@ func TestHandlerEntity(t *testing.T) {
 
 		object, err := h.Entity(test.identifier)
 
-		if test.expectedError != nil {
-			if fmt.Sprintf("%v", test.expectedError) != fmt.Sprintf("%v", err) {
-				t.Fatalf("[%d] %s: expected error “%s”, got “%s”", i, test.description, test.expectedError, err)
-			}
-		} else {
-			if object != nil && !reflect.DeepEqual(test.expectedObject, *object) {
-				for _, l := range diff(test.expectedObject, *object) {
-					t.Log(l)
-				}
+		if err != nil {
+			t.Fatalf("[%d] “%s”: not expecting error “%v”", i, test.description, err)
+		}
 
-				t.Fatalf("[%d] “%s”", i, test.description)
+		if object != nil && !reflect.DeepEqual(test.expectedObject, *object) {
+			for _, l := range diff(test.expectedObject, *object) {
+				t.Log(l)
 			}
+
+			t.Fatalf("[%d] “%s”", i, test.description)
 		}
 	}
 }
@@ -416,7 +413,7 @@ func TestHandlerQuery(t *testing.T) {
 
 		if test.expectedError != nil {
 			if fmt.Sprintf("%v", test.expectedError) != fmt.Sprintf("%v", err) {
-				t.Fatalf("[%d] %s: expected error “%s”, got “%s”", i, test.description, test.expectedError, err)
+				t.Fatalf("[%d] “%s“: expected error “%s”, got “%s”", i, test.description, test.expectedError, err)
 			}
 		} else {
 			expectedObjType := objType(test.expectedObject)
