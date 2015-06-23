@@ -4,7 +4,7 @@ type Domain struct {
 	ObjectClassName string                `json:"objectClassName"`
 	LDHName         string                `json:"ldhName,omitempty"`
 	UnicodeName     string                `json:"unicodeName,omitempty"`
-	Nameservers     []Nameserver          `json:"nameservers"`
+	Nameservers     []Nameserver          `json:"nameservers,omitempty"`
 	SecureDNS       SecureDNS             `json:"secureDNS,omitempty"`
 	Arbitration     bool                  `json:"nicbr_arbitration,omitempty"`
 	Links           []Link                `json:"links,omitempty"`
