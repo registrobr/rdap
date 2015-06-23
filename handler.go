@@ -49,7 +49,7 @@ func (h *Handler) Query(object string) (interface{}, error) {
 	return nil, ErrInvalidQuery
 }
 
-func (h *Handler) ASN(object string) (*protocol.ASResponse, error) {
+func (h *Handler) ASN(object string) (*protocol.AS, error) {
 	asn, err := strconv.ParseUint(object, 10, 32)
 
 	if err != nil {
@@ -119,7 +119,7 @@ func (h *Handler) IP(object string) (*protocol.IPNetwork, error) {
 	return NewClient(uris, h.HTTPClient).IP(ip)
 }
 
-func (h *Handler) Domain(object string) (*protocol.DomainResponse, error) {
+func (h *Handler) Domain(object string) (*protocol.Domain, error) {
 	if !isFQDN.MatchString(object) || !strings.Contains(object, ".") {
 		return nil, ErrInvalidQuery
 	}

@@ -27,7 +27,7 @@ func TestHandlerDomain(t *testing.T) {
 		{
 			description: "Domain handler should return a valid RDAP response",
 			identifier:  "example.br",
-			expectedObject: protocol.DomainResponse{
+			expectedObject: protocol.Domain{
 				ObjectClassName: "domain",
 				LDHName:         "example.br",
 			},
@@ -36,7 +36,7 @@ func TestHandlerDomain(t *testing.T) {
 			description:    "Domain handler should return a valid RDAP response (bootstrapped)",
 			identifier:     "example.br",
 			bootstrapEntry: "br",
-			expectedObject: protocol.DomainResponse{
+			expectedObject: protocol.Domain{
 				ObjectClassName: "domain",
 				LDHName:         "example.br",
 			},
@@ -101,7 +101,7 @@ func TestHandlerASN(t *testing.T) {
 		{
 			description: "ASN handler should return a valid RDAP response",
 			identifier:  "1",
-			expectedObject: protocol.ASResponse{
+			expectedObject: protocol.AS{
 				ObjectClassName: "as",
 				StartAutnum:     1,
 				EndAutnum:       16,
@@ -111,7 +111,7 @@ func TestHandlerASN(t *testing.T) {
 			description:    "ASN handler should return a valid RDAP response (bootstrapped)",
 			identifier:     "1",
 			bootstrapEntry: "1-16",
-			expectedObject: protocol.ASResponse{
+			expectedObject: protocol.AS{
 				ObjectClassName: "as",
 				StartAutnum:     1,
 				EndAutnum:       16,
@@ -370,9 +370,9 @@ func TestHandlerQuery(t *testing.T) {
 		expectedError  error
 	}{
 		{
-			description:    "Generic handler should return an object of type protocol.ASResponse",
+			description:    "Generic handler should return an object of type protocol.AS",
 			identifier:     "1",
-			expectedObject: protocol.ASResponse{},
+			expectedObject: protocol.AS{},
 		},
 		{
 			description:    "Generic handler should return an object of type protocol.IPNetwork",
@@ -385,9 +385,9 @@ func TestHandlerQuery(t *testing.T) {
 			expectedObject: protocol.IPNetwork{},
 		},
 		{
-			description:    "Generic handler should return an object of type protocol.DomainResponse",
+			description:    "Generic handler should return an object of type protocol.Domain",
 			identifier:     "example.br",
-			expectedObject: protocol.DomainResponse{},
+			expectedObject: protocol.Domain{},
 		},
 		{
 			description:    "Generic handler should return an object of type protocol.Entity",

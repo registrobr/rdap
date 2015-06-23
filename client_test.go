@@ -221,14 +221,14 @@ func TestClientQueriers(t *testing.T) {
 			kind:           domain,
 			identifier:     "example.br",
 			responseBody:   `{"objectClassName":"domain"}`,
-			expectedObject: &protocol.DomainResponse{ObjectClassName: "domain"},
+			expectedObject: &protocol.Domain{ObjectClassName: "domain"},
 		},
 		{
 			description:    "it should return the right uris when matching a domain",
 			kind:           autnum,
 			identifier:     uint64(1),
 			responseBody:   `{"objectClassName":"as"}`,
-			expectedObject: &protocol.ASResponse{ObjectClassName: "as"},
+			expectedObject: &protocol.AS{ObjectClassName: "as"},
 		},
 		{
 			description: "it should return the right uris when matching an ipv4 network",

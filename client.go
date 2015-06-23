@@ -36,8 +36,8 @@ func NewClient(uris []string, httpClient *http.Client) *Client {
 	}
 }
 
-func (c *Client) Domain(fqdn string) (*protocol.DomainResponse, error) {
-	r := &protocol.DomainResponse{}
+func (c *Client) Domain(fqdn string) (*protocol.Domain, error) {
+	r := &protocol.Domain{}
 	fqdn = idn.ToPunycode(strings.ToLower(fqdn))
 
 	if err := c.query(domain, fqdn, r); err != nil {
@@ -47,8 +47,8 @@ func (c *Client) Domain(fqdn string) (*protocol.DomainResponse, error) {
 	return r, nil
 }
 
-func (c *Client) ASN(as uint64) (*protocol.ASResponse, error) {
-	r := &protocol.ASResponse{}
+func (c *Client) ASN(as uint64) (*protocol.AS, error) {
+	r := &protocol.AS{}
 
 	if err := c.query(autnum, as, r); err != nil {
 		return nil, err
