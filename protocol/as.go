@@ -11,6 +11,7 @@ type AS struct {
 	Entities        []Entity        `json:"entities,omitempty"`
 	RoutingPolicy   []RoutingPolicy `json:"nicbr_routing_policy,omitempty"`
 	Events          []Event         `json:"events,omitempty"`
+	Conformance
 }
 
 type RoutingPolicy struct {

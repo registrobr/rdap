@@ -14,6 +14,7 @@ type Domain struct {
 	PublicIDs       []PublicID            `json:"publicIds,omitempty"`
 	Remarks         []Remark              `json:"remarks,omitempty"`
 	Unavailability  *DomainUnavailability `json:"-"`
+	Conformance
 }
 
 type DomainUnavailability struct {
