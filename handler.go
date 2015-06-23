@@ -7,13 +7,15 @@ import (
 	"reflect"
 	"regexp"
 	"strconv"
+	"strings"
 
 	"github.com/registrobr/rdap/protocol"
 )
 
-var isFQDN = regexp.MustCompile(`^(([[:alnum:]](([[:alnum:]]|\-){0,61}[[:alnum:]])?\.)*[[:alnum:]](([[:alnum:]]|\-){0,61}[[:alnum:]])?)?(\.)?$`)
-
-var ErrInvalidQuery = errors.New("invalid query")
+var (
+	isFQDN          = regexp.MustCompile(`^(([[:alnum:]](([[:alnum:]]|\-){0,61}[[:alnum:]])?\.)*[[:alnum:]](([[:alnum:]]|\-){0,61}[[:alnum:]])?)?(\.)?$`)
+	ErrInvalidQuery = errors.New("invalid query")
+)
 
 type Handler struct {
 	URIs       []string
@@ -118,7 +120,7 @@ func (h *Handler) IP(object string) (*protocol.IPNetwork, error) {
 }
 
 func (h *Handler) Domain(object string) (*protocol.DomainResponse, error) {
-	if !isFQDN.MatchString(object) {
+	if !isFQDN.MatchString(object) || !strings.Contains(object, ".") {
 		return nil, ErrInvalidQuery
 	}
 
