@@ -6,9 +6,9 @@ type PublicID struct {
 }
 
 type CustomerSupportService struct {
-	Email   string
-	Website string
-	Phone   string
+	Email   string `json:"email,omitempty"`
+	Website string `json:"website,omitempty"`
+	Phone   string `json:"phone,omitempty"`
 }
 
 type Entity struct {
