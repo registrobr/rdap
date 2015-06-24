@@ -13,6 +13,7 @@ type Domain struct {
 	Status          []Status              `json:"status,omitempty"`
 	PublicIDs       []PublicID            `json:"publicIds,omitempty"`
 	Remarks         []Remark              `json:"remarks,omitempty"`
+	Network         IPNetwork             `json:"network,omitempty"`
 	Unavailability  *DomainUnavailability `json:"-"`
 	Conformance
 }
