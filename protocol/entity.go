@@ -14,7 +14,7 @@ type CustomerSupportService struct {
 type Entity struct {
 	ObjectClassName        string                 `json:"objectClassName"`
 	Handle                 string                 `json:"handle"`
-	VCardArray             []interface{}          `json:"vCardArray,omitempty"`
+	VCardArray             []interface{}          `json:"vcardArray,omitempty"`
 	Roles                  []string               `json:"roles,omitempty"`
 	PublicIds              []PublicID             `json:"publicIds,omitempty"`
 	Responsible            string                 `json:"nicbr_responsible,omitempty"`
