@@ -1,7 +1,7 @@
 package protocol
 
 type Conformance struct {
-	Levels []string `json:"rdapConformance"`
+	Levels []string `json:"rdapConformance,omitempty"`
 }
 
 type ConformanceSetter interface {
