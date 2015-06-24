@@ -14,7 +14,7 @@ type DS struct {
 }
 
 type SecureDNS struct {
-	ZoneSigned        bool `json:"zoneSigned"`
-	DelegationsSigned bool `json:"delegationsSigned"`
-	DSData            []DS `json:"dsData,omitempty"`
+	ZoneSigned       bool `json:"zoneSigned"`
+	DelegationSigned bool `json:"delegationSigned"`
+	DSData           []DS `json:"dsData,omitempty"`
 }
