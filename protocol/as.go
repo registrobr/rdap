@@ -5,6 +5,7 @@ type AS struct {
 	Handle          string          `json:"handle"`
 	StartAutnum     uint32          `json:"startAutnum"`
 	EndAutnum       uint32          `json:"endAutnum"`
+	Name            string          `json:"name,omitempty"`
 	Type            string          `json:"type"`
 	Country         string          `json:"country"`
 	Links           []Link          `json:"links,omitempty"`

@@ -2,6 +2,7 @@ package protocol
 
 type Domain struct {
 	ObjectClassName string                `json:"objectClassName"`
+	Handle          string                `json:"handle,omitempty"`
 	LDHName         string                `json:"ldhName,omitempty"`
 	UnicodeName     string                `json:"unicodeName,omitempty"`
 	Nameservers     []Nameserver          `json:"nameservers,omitempty"`
