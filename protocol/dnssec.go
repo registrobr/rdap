@@ -9,8 +9,8 @@ type DS struct {
 	DigestType  int       `json:"digestType"`
 	Events      []Event   `json:"events,omitempty"`
 	DSStatus    string    `json:"nicbr_status,omitempty"`
-	LastCheckAt time.Time `json:"nicbr_last_check,omitempty"`
-	LastOKAt    time.Time `json:"nicbr_last_ok,omitempty"`
+	LastCheckAt time.Time `json:"nicbr_lastCheck,omitempty"`
+	LastOKAt    time.Time `json:"nicbr_lastOK,omitempty"`
 }
 
 type SecureDNS struct {
