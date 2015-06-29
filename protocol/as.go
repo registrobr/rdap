@@ -12,6 +12,7 @@ type AS struct {
 	Entities        []Entity        `json:"entities,omitempty"`
 	RoutingPolicy   []RoutingPolicy `json:"nicbr_routingPolicy,omitempty"`
 	Events          []Event         `json:"events,omitempty"`
+	Notices         []Notice        `json:"notices",omitempty`
 	Conformance
 }
 

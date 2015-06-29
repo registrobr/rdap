@@ -23,5 +23,6 @@ type Entity struct {
 	Events                 []Event                `json:"events,omitempty"`
 	Links                  []Link                 `json:"links,omitempty"`
 	Remarks                []Remark               `json:"remarks,omitempty"`
+	Notices                []Notice               `json:"notices",omitempty`
 	Conformance
 }
