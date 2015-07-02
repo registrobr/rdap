@@ -24,5 +24,8 @@ type Entity struct {
 	Links                  []Link                 `json:"links,omitempty"`
 	Remarks                []Remark               `json:"remarks,omitempty"`
 	Notices                []Notice               `json:"notices,omitempty"`
+	DomainCount            int                    `json:"nicbr_domainCount,omitempty"`
+	InetCount              int                    `json:"nicbr_inetCount,omitempty"`
+	AutnumCount            int                    `json:"nicbr_autnumCount,omitempty"`
 	Conformance
 }
