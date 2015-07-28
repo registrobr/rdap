@@ -96,7 +96,7 @@ func (c *Client) handleHTTPStatusCode(kind kind, response *http.Response) error 
 		return ErrNotFound
 	}
 
-	if response.Header.Get("Content-Type") != "application/json" {
+	if response.Header.Get("Content-Type") != "application/rdap+json" {
 		return fmt.Errorf("unexpected response: %d %s",
 			response.StatusCode, http.StatusText(response.StatusCode))
 	}
@@ -105,12 +105,7 @@ func (c *Client) handleHTTPStatusCode(kind kind, response *http.Response) error 
 	if err := json.NewDecoder(response.Body).Decode(&responseErr); err != nil {
 		return err
 	}
-
-	return fmt.Errorf("HTTP status code: %d (%s)\n%s:\n  %s",
-		responseErr.ErrorCode,
-		http.StatusText(responseErr.ErrorCode),
-		responseErr.Title,
-		strings.Join(responseErr.Description, ", "))
+	return responseErr
 }
 
 func (c *Client) query(kind kind, identifier interface{}, object interface{}) error {
