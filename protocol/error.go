@@ -1,6 +1,10 @@
 package protocol
 
-import "fmt"
+import (
+	"fmt"
+	"net/http"
+	"strings"
+)
 
 type Error struct {
 	Notices     []Notice `json:"notices,omitempty"`
@@ -12,5 +16,9 @@ type Error struct {
 }
 
 func (e Error) Error() string {
-	return fmt.Sprintf("%d", e.ErrorCode)
+	return fmt.Sprintf("HTTP status code: %d (%s)\n%s:\n  %s",
+		e.ErrorCode,
+		http.StatusText(e.ErrorCode),
+		e.Title,
+		strings.Join(e.Description, ", "))
 }
