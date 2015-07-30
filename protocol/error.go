@@ -11,6 +11,6 @@ type Error struct {
 	Conformance
 }
 
-func (e *Error) Error() string {
+func (e Error) Error() string {
 	return fmt.Sprintf("%d", e.ErrorCode)
 }
