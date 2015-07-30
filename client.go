@@ -24,12 +24,12 @@ var (
 )
 
 type Client struct {
-	httpClient *http.Client
-	uris       []string
+	httpClient    *http.Client
+	uris          []string
+	XForwardedFor string
 }
 
 func NewClient(uris []string, httpClient *http.Client) *Client {
-
 	return &Client{
 		uris:       uris,
 		httpClient: httpClient,
@@ -148,6 +148,10 @@ func (c *Client) fetch(uri string) (response *http.Response, err error) {
 		return nil, err
 	}
 	req.Header.Add("Accept", "application/json")
+
+	if c.XForwardedFor != "" {
+		req.Header.Add("X-Forwarded-For", c.XForwardedFor)
+	}
 
 	if c.httpClient == nil {
 		c.httpClient = &http.Client{}
