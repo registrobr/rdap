@@ -24,6 +24,7 @@ If you like this, you may also be interested in:
 
 A not-so-up-to-date-list-that-may-be-actually-current:
 
+* https://cloudflare.com
 * https://github.com/abh/geodns
 * http://www.statdns.com/
 * http://www.dnsinspect.com/
@@ -35,6 +36,10 @@ A not-so-up-to-date-list-that-may-be-actually-current:
 * https://github.com/DevelopersPL/godnsagent
 * https://github.com/duedil-ltd/discodns
 * https://github.com/StalkR/dns-reverse-proxy
+* https://github.com/tianon/rawdns
+* https://mesosphere.github.io/mesos-dns/
+* https://pulse.turbobytes.com/
+* https://play.google.com/store/apps/details?id=com.turbobytes.dig
 
 Send pull request if you want to be listed here.
 
@@ -116,12 +121,13 @@ Example programs can be found in the `github.com/miekg/exdns` repository.
 * 6605 - ECDSA
 * 6725 - IANA Registry Update
 * 6742 - ILNP DNS
+* 6844 - CAA record
 * 6891 - EDNS0 update
 * 6895 - DNS IANA considerations
 * 6975 - Algorithm Understanding in DNSSEC
 * 7043 - EUI48/EUI64 records
 * 7314 - DNS (EDNS) EXPIRE Option
-* xxxx - URI record (draft)
+* 7553 - URI record
 * xxxx - EDNS0 DNS Update Lease (draft)
 
 ## Loosely based upon
@@ -134,8 +140,7 @@ Example programs can be found in the `github.com/miekg/exdns` repository.
 ## TODO
 
 * privatekey.Precompute() when signing?
-* Last remaining RRs: APL, ATMA, A6 and NXT and IPSECKEY;
-* Missing in parsing: ISDN, UNSPEC, ATMA;
-* CAA parsing is broken;
-* NSEC(3) cover/match/closest enclose;
-* Replies with TC bit are not parsed to the end;
+* Last remaining RRs: APL, ATMA, A6 and NXT.
+* Missing in parsing: ISDN, UNSPEC, ATMA.
+* NSEC(3) cover/match/closest enclose.
+* Replies with TC bit are not parsed to the end.

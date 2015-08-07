@@ -2,7 +2,6 @@ package idn_test
 
 import (
 	"fmt"
-
 	"github.com/registrobr/rdap/Godeps/_workspace/src/github.com/miekg/dns/idn"
 )
 

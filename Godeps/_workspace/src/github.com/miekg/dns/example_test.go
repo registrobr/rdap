@@ -3,10 +3,9 @@ package dns_test
 import (
 	"errors"
 	"fmt"
+	"github.com/registrobr/rdap/Godeps/_workspace/src/github.com/miekg/dns"
 	"log"
 	"net"
-
-	"github.com/registrobr/rdap/Godeps/_workspace/src/github.com/miekg/dns"
 )
 
 // Retrieve the MX records for miek.nl.
