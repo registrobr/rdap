@@ -28,6 +28,7 @@ type IPNetwork struct {
 type ReverseDelegation struct {
 	StartAddress string       `json:"startAddress"`
 	EndAddress   string       `json:"endAddress"`
+	IPVersion    string       `json:"ipVersion"`
 	Nameservers  []Nameserver `json:"nameservers,omitempty"`
 	Events       []Event      `json:"events"`
 }
