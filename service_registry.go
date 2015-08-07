@@ -48,7 +48,7 @@ func (s service) uris() []string {
 //
 // See http://tools.ietf.org/html/rfc7484#section-5.3
 func (s serviceRegistry) matchAS(asn uint64) (uris []string, err error) {
-	var size uint64 = math.MaxUint32
+	size := uint64(math.MaxUint32)
 
 	for _, service := range s.Services {
 		for _, entry := range service.entries() {
