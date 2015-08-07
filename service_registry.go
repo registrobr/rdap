@@ -103,14 +103,14 @@ func (s serviceRegistry) matchIPNetwork(network *net.IPNet) (uris []string, err 
 				return nil, err
 			}
 
-			if ipnet.Contains(network.IP) {
+			if mask, _ := ipnet.Mask.Size(); mask > size && ipnet.Contains(network.IP) {
 				lastIP := make(net.IP, len(network.IP))
 
 				for i := 0; i < len(network.IP); i++ {
 					lastIP[i] = network.IP[i] | ^network.Mask[i]
 				}
 
-				if mask, _ := ipnet.Mask.Size(); ipnet.Contains(lastIP) && mask > size {
+				if ipnet.Contains(lastIP) {
 					uris = service.uris()
 					size = mask
 				}
@@ -137,7 +137,7 @@ func (s serviceRegistry) matchIP(ip net.IP) (uris []string, err error) {
 				return nil, err
 			}
 
-			if mask, _ := ipnet.Mask.Size(); ipnet.Contains(ip) && mask > size {
+			if mask, _ := ipnet.Mask.Size(); mask > size && ipnet.Contains(ip) {
 				uris = service.uris()
 				size = mask
 			}
