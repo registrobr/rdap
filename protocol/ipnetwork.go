@@ -19,7 +19,7 @@ type IPNetwork struct {
 	Entities           []Entity            `json:"entities"`
 	Notices            []Notice            `json:"notices,omitempty"`
 	Remarks            []Remark            `json:"remarks,omitempty"`
-	ReverseDelegations []ReverseDelegation `json:"nicbr_reverseDelegations"`
+	ReverseDelegations []ReverseDelegation `json:"nicbr_reverseDelegations,omitempty"`
 	Conformance
 }
 
