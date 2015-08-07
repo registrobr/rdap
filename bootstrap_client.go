@@ -28,6 +28,7 @@ type BootstrapClient interface {
 	IPNetwork(object string) (*protocol.IPNetwork, error)
 	IP(object string) (*protocol.IPNetwork, error)
 	SetXForwardedFor(addr string)
+	SetCacheDetector(isFromCache func(*http.Response) bool)
 }
 
 // NewBootstrapClient returns a client with bootstrap capabilities. You can
@@ -174,6 +175,10 @@ func (b *bootstrapClient) IP(object string) (*protocol.IPNetwork, error) {
 
 func (b *bootstrapClient) SetXForwardedFor(addr string) {
 	b.client.SetXForwardedFor(addr)
+}
+
+func (b *bootstrapClient) SetCacheDetector(isFromCache func(*http.Response) bool) {
+	b.bootstrap.IsFromCache = isFromCache
 }
 
 type genericQuerier struct {

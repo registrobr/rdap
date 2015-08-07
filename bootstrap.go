@@ -26,10 +26,10 @@ const (
 // RDAP server that contains the desired information
 type Bootstrap struct {
 	Bootstrap   string
+	IsFromCache func(*http.Response) bool
 	httpClient  *http.Client
 	cacheKey    string
 	reloadCache bool
-	IsFromCache func(*http.Response) bool
 }
 
 // NewBootstrap returns build a Bootstrap instance that will use the injected
