@@ -15,4 +15,5 @@ type Nameserver struct {
 	UnicodeName     string       `json:"unicodeName,omitempty"`
 	IPAddresses     *IPAddresses `json:"ipAddresses,omitempty"`
 	Remarks         []Remark     `json:"remarks,omitempty"`
+	Events          []Event      `json:"events,omitempty"`
 }
