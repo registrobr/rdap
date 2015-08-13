@@ -66,5 +66,5 @@ type Event struct {
 	// Status was proposed by NIC.br to store the status of a current event.
 	// For NIC.br specific use was useful to store the status of a delegation check
 	// event
-	Status string `json:"status"`
+	Status Status `json:"status"`
 }
