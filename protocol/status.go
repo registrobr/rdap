@@ -76,7 +76,7 @@ const (
 	StatusDSInvalidSig Status = "ds invalidsig"
 
 	// StatusDSNotFound the corresponding public key (DNSKEY) was not found in
-	// the keyset (DNSKEY RRSET)
+	// the keyset
 	StatusDSNotFound Status = "ds notfound"
 
 	// StatusDSNoSEP the corresponding public key (DNSKEY) isn't a secure entry

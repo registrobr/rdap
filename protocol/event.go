@@ -64,7 +64,7 @@ type Event struct {
 	Date   time.Time   `json:"eventDate"`
 
 	// Status was proposed by NIC.br to store the status of a current event.
-	// For NIC.br specific use was useful to store the status of a delegation check
-	// event
-	Status Status `json:"status"`
+	// For NIC.br specific use was useful to store the status of a delegation
+	// check event
+	Status []Status `json:"status"`
 }
