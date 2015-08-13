@@ -43,8 +43,11 @@ const (
 	// StatusNSFail nameserver answers with an internal server error
 	StatusNSFail Status = "ns fail"
 
-	// StatusNSRefused nameserver refused to give an answer
-	StatusNSRefused Status = "ns refused"
+	// StatusNSQueryRefused nameserver refused to give an answer
+	StatusNSQueryRefused Status = "ns query refused"
+
+	// StatusNSConnectionRefused connection was refused (firewall)
+	StatusNSConnectionRefused Status = "ns connection refused"
 
 	// StatusNSError some generic error occurred while checking the nameserver
 	StatusNSError Status = "ns error"
