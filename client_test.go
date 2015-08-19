@@ -91,11 +91,15 @@ func TestClientDomain(t *testing.T) {
 
 		if item.expectedError != nil {
 			if fmt.Sprintf("%v", item.expectedError) != fmt.Sprintf("%v", err) {
-				t.Fatalf("[%d] %s: expected error “%s”, got “%s”", i, item.description, item.expectedError, err)
+				t.Errorf("[%d] %s: expected error “%s”, got “%s”", i, item.description, item.expectedError, err)
 			}
+
+		} else if err != nil {
+			t.Errorf("[%d] %s: unexpected error “%s”", i, item.description, err)
+
 		} else {
 			if !reflect.DeepEqual(item.expected, domain) {
-				t.Fatalf("[%d] “%s”: mismatch results.\n%v", i, item.description, diff(item.expected, domain))
+				t.Errorf("[%d] “%s”: mismatch results.\n%v", i, item.description, diff(item.expected, domain))
 			}
 		}
 	}
@@ -181,11 +185,15 @@ func TestClientASN(t *testing.T) {
 
 		if item.expectedError != nil {
 			if fmt.Sprintf("%v", item.expectedError) != fmt.Sprintf("%v", err) {
-				t.Fatalf("[%d] %s: expected error “%s”, got “%s”", i, item.description, item.expectedError, err)
+				t.Errorf("[%d] %s: expected error “%s”, got “%s”", i, item.description, item.expectedError, err)
 			}
+
+		} else if err != nil {
+			t.Errorf("[%d] %s: unexpected error “%s”", i, item.description, err)
+
 		} else {
 			if !reflect.DeepEqual(item.expected, as) {
-				t.Fatalf("[%d] “%s”: mismatch results.\n%v", i, item.description, diff(item.expected, as))
+				t.Errorf("[%d] “%s”: mismatch results.\n%v", i, item.description, diff(item.expected, as))
 			}
 		}
 	}
@@ -267,11 +275,15 @@ func TestClientEntity(t *testing.T) {
 
 		if item.expectedError != nil {
 			if fmt.Sprintf("%v", item.expectedError) != fmt.Sprintf("%v", err) {
-				t.Fatalf("[%d] %s: expected error “%s”, got “%s”", i, item.description, item.expectedError, err)
+				t.Errorf("[%d] %s: expected error “%s”, got “%s”", i, item.description, item.expectedError, err)
 			}
+
+		} else if err != nil {
+			t.Errorf("[%d] %s: unexpected error “%s”", i, item.description, err)
+
 		} else {
 			if !reflect.DeepEqual(item.expected, entity) {
-				t.Fatalf("[%d] “%s”: mismatch results.\n%v", i, item.description, diff(item.expected, entity))
+				t.Errorf("[%d] “%s”: mismatch results.\n%v", i, item.description, diff(item.expected, entity))
 			}
 		}
 	}
@@ -378,11 +390,15 @@ func TestClientIPNetwork(t *testing.T) {
 
 		if item.expectedError != nil {
 			if fmt.Sprintf("%v", item.expectedError) != fmt.Sprintf("%v", err) {
-				t.Fatalf("[%d] %s: expected error “%s”, got “%s”", i, item.description, item.expectedError, err)
+				t.Errorf("[%d] %s: expected error “%s”, got “%s”", i, item.description, item.expectedError, err)
 			}
+
+		} else if err != nil {
+			t.Errorf("[%d] %s: unexpected error “%s”", i, item.description, err)
+
 		} else {
 			if !reflect.DeepEqual(item.expected, ipNetwork) {
-				t.Fatalf("[%d] “%s”: mismatch results.\n%v", i, item.description, diff(item.expected, ipNetwork))
+				t.Errorf("[%d] “%s”: mismatch results.\n%v", i, item.description, diff(item.expected, ipNetwork))
 			}
 		}
 	}
@@ -468,11 +484,15 @@ func TestClientIP(t *testing.T) {
 
 		if item.expectedError != nil {
 			if fmt.Sprintf("%v", item.expectedError) != fmt.Sprintf("%v", err) {
-				t.Fatalf("[%d] %s: expected error “%s”, got “%s”", i, item.description, item.expectedError, err)
+				t.Errorf("[%d] %s: expected error “%s”, got “%s”", i, item.description, item.expectedError, err)
 			}
+
+		} else if err != nil {
+			t.Errorf("[%d] %s: unexpected error “%s”", i, item.description, err)
+
 		} else {
 			if !reflect.DeepEqual(item.expected, ipNetwork) {
-				t.Fatalf("[%d] “%s”: mismatch results.\n%v", i, item.description, diff(item.expected, ipNetwork))
+				t.Errorf("[%d] “%s”: mismatch results.\n%v", i, item.description, diff(item.expected, ipNetwork))
 			}
 		}
 	}

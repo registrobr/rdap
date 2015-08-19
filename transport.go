@@ -22,6 +22,52 @@ const (
 
 type QueryType string
 
+const (
+	bootstrapQueryTypeNone bootstrapQueryType = ""
+	bootstrapQueryTypeDNS  bootstrapQueryType = "dns"
+	bootstrapQueryTypeASN  bootstrapQueryType = "asn"
+	bootstrapQueryTypeIPv4 bootstrapQueryType = "ipv4"
+	bootstrapQueryTypeIPv6 bootstrapQueryType = "ipv6"
+)
+
+type bootstrapQueryType string
+
+func newBootstrapQueryType(queryType QueryType, queryValue string) (bootstrapQueryType, bool) {
+	switch queryType {
+	case QueryTypeDomain:
+		return bootstrapQueryTypeDNS, true
+
+	case QueryTypeAutnum:
+		return bootstrapQueryTypeASN, true
+
+	case QueryTypeIP:
+		ip := net.ParseIP(queryValue)
+		if ip == nil {
+			return bootstrapQueryTypeNone, false
+		}
+
+		if ip.To4() != nil {
+			return bootstrapQueryTypeIPv4, true
+		} else {
+			return bootstrapQueryTypeIPv6, true
+		}
+
+	case QueryTypeIPNetwork:
+		ip, _, err := net.ParseCIDR(queryValue)
+		if err != nil {
+			return bootstrapQueryTypeNone, false
+		}
+
+		if ip.To4() != nil {
+			return bootstrapQueryTypeIPv4, true
+		} else {
+			return bootstrapQueryTypeIPv6, true
+		}
+	}
+
+	return bootstrapQueryTypeNone, false
+}
+
 var (
 	// ErrNotFound is used when the RDAP server doesn't contain any
 	// information of the requested object
@@ -98,6 +144,7 @@ func (d *defaultFetcher) Fetch(uris []string, queryType QueryType, queryValue st
 		if resp.Header.Get("Content-Type") != "application/rdap+json" {
 			lastErr = fmt.Errorf("unexpected response: %d %s",
 				resp.StatusCode, http.StatusText(resp.StatusCode))
+			continue
 		}
 
 		if resp.StatusCode != http.StatusOK {
@@ -106,6 +153,7 @@ func (d *defaultFetcher) Fetch(uris []string, queryType QueryType, queryValue st
 				lastErr = err
 				continue
 			}
+
 			lastErr = responseErr
 			continue
 		}
@@ -126,7 +174,13 @@ func NewBootstrapFetcher(httpClient HTTPClient, xForwardedFor string, bootstrapU
 func bootstrap(bootstrapURI string, httpClient HTTPClient, cacheDetector CacheDetector) decorator {
 	return func(f Fetcher) Fetcher {
 		return fetcherFunc(func(uris []string, queryType QueryType, queryValue string) (*http.Response, error) {
-			bootstrapURI := fmt.Sprintf("%s/%s", bootstrapURI, queryType)
+			bootstrapQueryType, ok := newBootstrapQueryType(queryType, queryValue)
+			if !ok {
+				// if we can't convert the queryType the resource is probably not
+				// supported by the bootstrap
+				return f.Fetch(uris, queryType, queryValue)
+			}
+			bootstrapURI := fmt.Sprintf(bootstrapURI, bootstrapQueryType)
 
 			serviceRegistry, cached, err := bootstrapFetch(httpClient, bootstrapURI, false, cacheDetector)
 			if err != nil {
@@ -138,7 +192,7 @@ func bootstrap(bootstrapURI string, httpClient HTTPClient, cacheDetector CacheDe
 				uris, err = serviceRegistry.matchDomain(queryValue)
 				if err == nil && len(uris) == 0 && cached {
 					var nsSet []*net.NS
-					if nsSet, err = net.LookupNS(queryValue); err == nil && len(nsSet) > 0 {
+					if nsSet, err = lookupNS(queryValue); err == nil && len(nsSet) > 0 {
 						serviceRegistry, cached, err = bootstrapFetch(httpClient, bootstrapURI, true, cacheDetector)
 						if err == nil {
 							uris, err = serviceRegistry.matchDomain(queryValue)
@@ -195,7 +249,10 @@ func bootstrapFetch(httpClient HTTPClient, uri string, reloadCache bool, cacheDe
 		return nil, false, err
 	}
 
-	cached := cacheDetector(resp)
+	cached := false
+	if cacheDetector != nil {
+		cached = cacheDetector(resp)
+	}
 
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNotModified {
 		return nil, cached, fmt.Errorf("unexpected status code %d %s", resp.StatusCode, http.StatusText(resp.StatusCode))
@@ -211,4 +268,8 @@ func bootstrapFetch(httpClient HTTPClient, uri string, reloadCache bool, cacheDe
 	}
 
 	return &serviceRegistry, cached, nil
+}
+
+var lookupNS = func(name string) (nss []*net.NS, err error) {
+	return net.LookupNS(name)
 }
