@@ -13,11 +13,10 @@ import (
 )
 
 const (
-	QueryTypeDomain    QueryType = "domain"
-	QueryTypeAutnum    QueryType = "autnum"
-	QueryTypeIP        QueryType = "ip"
-	QueryTypeIPNetwork QueryType = "ipnetwork"
-	QueryTypeEntity    QueryType = "entity"
+	QueryTypeDomain QueryType = "domain"
+	QueryTypeAutnum QueryType = "autnum"
+	QueryTypeIP     QueryType = "ip"
+	QueryTypeEntity QueryType = "entity"
 )
 
 type QueryType string
@@ -42,27 +41,25 @@ func newBootstrapQueryType(queryType QueryType, queryValue string) (bootstrapQue
 
 	case QueryTypeIP:
 		ip := net.ParseIP(queryValue)
-		if ip == nil {
-			return bootstrapQueryTypeNone, false
-		}
+		if ip != nil {
+			if ip.To4() != nil {
+				return bootstrapQueryTypeIPv4, true
+			}
 
-		if ip.To4() != nil {
-			return bootstrapQueryTypeIPv4, true
-		} else {
 			return bootstrapQueryTypeIPv6, true
 		}
 
-	case QueryTypeIPNetwork:
-		ip, _, err := net.ParseCIDR(queryValue)
+		var err error
+		ip, _, err = net.ParseCIDR(queryValue)
 		if err != nil {
 			return bootstrapQueryTypeNone, false
 		}
 
 		if ip.To4() != nil {
 			return bootstrapQueryTypeIPv4, true
-		} else {
-			return bootstrapQueryTypeIPv6, true
 		}
+
+		return bootstrapQueryTypeIPv6, true
 	}
 
 	return bootstrapQueryTypeNone, false
@@ -201,8 +198,8 @@ func bootstrap(bootstrapURI string, httpClient HTTPClient, cacheDetector CacheDe
 				}
 
 			case QueryTypeAutnum:
-				asn, err := strconv.ParseUint(queryValue, 10, 32)
-				if err == nil {
+				var asn uint64
+				if asn, err = strconv.ParseUint(queryValue, 10, 32); err == nil {
 					uris, err = serviceRegistry.matchAS(uint32(asn))
 				}
 
@@ -210,12 +207,12 @@ func bootstrap(bootstrapURI string, httpClient HTTPClient, cacheDetector CacheDe
 				ip := net.ParseIP(queryValue)
 				if ip != nil {
 					uris, err = serviceRegistry.matchIP(ip)
-				}
 
-			case QueryTypeIPNetwork:
-				_, cidr, err := net.ParseCIDR(queryValue)
-				if err == nil {
-					uris, err = serviceRegistry.matchIPNetwork(cidr)
+				} else {
+					var cidr *net.IPNet
+					if _, cidr, err = net.ParseCIDR(queryValue); err == nil {
+						uris, err = serviceRegistry.matchIPNetwork(cidr)
+					}
 				}
 			}
 

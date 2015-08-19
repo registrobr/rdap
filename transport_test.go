@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"net"
 	"net/http"
 	"reflect"
 	"testing"
@@ -214,19 +215,20 @@ func TestBootstrap(t *testing.T) {
 		queryValue    string
 		xForwardedFor string
 		bootstrapURI  string
-		httpClient    map[string]func() (*http.Response, error)
+		httpClient    map[string]func(int) (*http.Response, error)
+		lookupNS      func(name string) (nss []*net.NS, err error)
 		cacheDetector CacheDetector
 		expected      *http.Response
 		expectedError error
 	}{
 		{
-			description:   "it should retrieve the URL from bootstrap and query the RDAP server correctly",
+			description:   "it should retrieve the URL from bootstrap and query the RDAP server correctly (domain)",
 			queryType:     QueryTypeDomain,
 			queryValue:    "example.com",
 			xForwardedFor: "200.160.2.3",
 			bootstrapURI:  "https://data.iana.org/rdap/%s.json",
-			httpClient: map[string]func() (*http.Response, error){
-				"https://data.iana.org/rdap/dns.json": func() (*http.Response, error) {
+			httpClient: map[string]func(int) (*http.Response, error){
+				"https://data.iana.org/rdap/dns.json": func(executionNumber int) (*http.Response, error) {
 					s := serviceRegistry{
 						Version:     version,
 						Publication: time.Now(),
@@ -252,7 +254,7 @@ func TestBootstrap(t *testing.T) {
 					response.Body = nopCloser{bytes.NewBuffer(data)}
 					return &response, nil
 				},
-				"https://rdap.beta.registro.br/domain/example.com": func() (*http.Response, error) {
+				"https://rdap.beta.registro.br/domain/example.com": func(executionNumber int) (*http.Response, error) {
 					domain := protocol.Domain{
 						ObjectClassName: "domain",
 						Handle:          "example.com",
@@ -298,14 +300,394 @@ func TestBootstrap(t *testing.T) {
 			}(),
 		},
 		{
+			description:   "it should retrieve the URL from bootstrap and query the RDAP server correctly (autnum)",
+			queryType:     QueryTypeAutnum,
+			queryValue:    "1234",
+			xForwardedFor: "200.160.2.3",
+			bootstrapURI:  "https://data.iana.org/rdap/%s.json",
+			httpClient: map[string]func(int) (*http.Response, error){
+				"https://data.iana.org/rdap/asn.json": func(executionNumber int) (*http.Response, error) {
+					s := serviceRegistry{
+						Version:     version,
+						Publication: time.Now(),
+						Description: "This is a test registry",
+						Services: []service{
+							{
+								[]string{"1000-2000"},
+								[]string{"https://rdap.beta.registro.br"},
+							},
+						},
+					}
+
+					data, err := json.Marshal(s)
+					if err != nil {
+						t.Fatal(err)
+					}
+
+					var response http.Response
+					response.StatusCode = http.StatusOK
+					response.Header = http.Header{
+						"Content-Type": []string{"application/rdap+json"},
+					}
+					response.Body = nopCloser{bytes.NewBuffer(data)}
+					return &response, nil
+				},
+				"https://rdap.beta.registro.br/autnum/1234": func(executionNumber int) (*http.Response, error) {
+					as := protocol.AS{
+						ObjectClassName: "as",
+						Handle:          "1234",
+					}
+
+					data, err := json.Marshal(as)
+					if err != nil {
+						t.Fatal(err)
+					}
+
+					var response http.Response
+					response.StatusCode = http.StatusOK
+					response.Header = http.Header{
+						"Content-Type": []string{"application/rdap+json"},
+					}
+					response.Body = nopCloser{bytes.NewBuffer(data)}
+					return &response, nil
+				},
+			},
+			cacheDetector: CacheDetector(func(resp *http.Response) bool {
+				return resp.Header.Get("X-From-Cache") == "1"
+			}),
+			expected: func() *http.Response {
+				as := protocol.AS{
+					ObjectClassName: "as",
+					Handle:          "1234",
+				}
+
+				data, err := json.Marshal(as)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				var response http.Response
+				response.StatusCode = http.StatusOK
+				response.Header = http.Header{
+					"Content-Type": []string{"application/rdap+json"},
+				}
+				response.Body = nopCloser{bytes.NewBuffer(data)}
+				return &response
+			}(),
+		},
+		{
+			description:   "it should retrieve the URL from bootstrap and query the RDAP server correctly (ipv4)",
+			queryType:     QueryTypeIP,
+			queryValue:    "200.160.2.3",
+			xForwardedFor: "200.160.2.3",
+			bootstrapURI:  "https://data.iana.org/rdap/%s.json",
+			httpClient: map[string]func(int) (*http.Response, error){
+				"https://data.iana.org/rdap/ipv4.json": func(executionNumber int) (*http.Response, error) {
+					s := serviceRegistry{
+						Version:     version,
+						Publication: time.Now(),
+						Description: "This is a test registry",
+						Services: []service{
+							{
+								[]string{"200.160.0.0/20"},
+								[]string{"https://rdap.beta.registro.br"},
+							},
+						},
+					}
+
+					data, err := json.Marshal(s)
+					if err != nil {
+						t.Fatal(err)
+					}
+
+					var response http.Response
+					response.StatusCode = http.StatusOK
+					response.Header = http.Header{
+						"Content-Type": []string{"application/rdap+json"},
+					}
+					response.Body = nopCloser{bytes.NewBuffer(data)}
+					return &response, nil
+				},
+				"https://rdap.beta.registro.br/ip/200.160.2.3": func(executionNumber int) (*http.Response, error) {
+					ipnetwork := protocol.IPNetwork{
+						ObjectClassName: "ipnetwork",
+						Handle:          "200.160.0.0/20",
+					}
+
+					data, err := json.Marshal(ipnetwork)
+					if err != nil {
+						t.Fatal(err)
+					}
+
+					var response http.Response
+					response.StatusCode = http.StatusOK
+					response.Header = http.Header{
+						"Content-Type": []string{"application/rdap+json"},
+					}
+					response.Body = nopCloser{bytes.NewBuffer(data)}
+					return &response, nil
+				},
+			},
+			cacheDetector: CacheDetector(func(resp *http.Response) bool {
+				return resp.Header.Get("X-From-Cache") == "1"
+			}),
+			expected: func() *http.Response {
+				ipnetwork := protocol.IPNetwork{
+					ObjectClassName: "ipnetwork",
+					Handle:          "200.160.0.0/20",
+				}
+
+				data, err := json.Marshal(ipnetwork)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				var response http.Response
+				response.StatusCode = http.StatusOK
+				response.Header = http.Header{
+					"Content-Type": []string{"application/rdap+json"},
+				}
+				response.Body = nopCloser{bytes.NewBuffer(data)}
+				return &response
+			}(),
+		},
+		{
+			description:   "it should retrieve the URL from bootstrap and query the RDAP server correctly (ipv6)",
+			queryType:     QueryTypeIP,
+			queryValue:    "2001:12ff:2::3",
+			xForwardedFor: "200.160.2.3",
+			bootstrapURI:  "https://data.iana.org/rdap/%s.json",
+			httpClient: map[string]func(int) (*http.Response, error){
+				"https://data.iana.org/rdap/ipv6.json": func(executionNumber int) (*http.Response, error) {
+					s := serviceRegistry{
+						Version:     version,
+						Publication: time.Now(),
+						Description: "This is a test registry",
+						Services: []service{
+							{
+								[]string{"2001:12ff::/20"},
+								[]string{"https://rdap.beta.registro.br"},
+							},
+						},
+					}
+
+					data, err := json.Marshal(s)
+					if err != nil {
+						t.Fatal(err)
+					}
+
+					var response http.Response
+					response.StatusCode = http.StatusOK
+					response.Header = http.Header{
+						"Content-Type": []string{"application/rdap+json"},
+					}
+					response.Body = nopCloser{bytes.NewBuffer(data)}
+					return &response, nil
+				},
+				"https://rdap.beta.registro.br/ip/2001:12ff:2::3": func(executionNumber int) (*http.Response, error) {
+					ipnetwork := protocol.IPNetwork{
+						ObjectClassName: "ipnetwork",
+						Handle:          "2001:12ff:2::3",
+					}
+
+					data, err := json.Marshal(ipnetwork)
+					if err != nil {
+						t.Fatal(err)
+					}
+
+					var response http.Response
+					response.StatusCode = http.StatusOK
+					response.Header = http.Header{
+						"Content-Type": []string{"application/rdap+json"},
+					}
+					response.Body = nopCloser{bytes.NewBuffer(data)}
+					return &response, nil
+				},
+			},
+			cacheDetector: CacheDetector(func(resp *http.Response) bool {
+				return resp.Header.Get("X-From-Cache") == "1"
+			}),
+			expected: func() *http.Response {
+				ipnetwork := protocol.IPNetwork{
+					ObjectClassName: "ipnetwork",
+					Handle:          "2001:12ff:2::3",
+				}
+
+				data, err := json.Marshal(ipnetwork)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				var response http.Response
+				response.StatusCode = http.StatusOK
+				response.Header = http.Header{
+					"Content-Type": []string{"application/rdap+json"},
+				}
+				response.Body = nopCloser{bytes.NewBuffer(data)}
+				return &response
+			}(),
+		},
+		{
+			description:   "it should retrieve the URL from bootstrap and query the RDAP server correctly (ip network v4)",
+			queryType:     QueryTypeIP,
+			queryValue:    "200.160.0.0/20",
+			xForwardedFor: "200.160.2.3",
+			bootstrapURI:  "https://data.iana.org/rdap/%s.json",
+			httpClient: map[string]func(int) (*http.Response, error){
+				"https://data.iana.org/rdap/ipv4.json": func(executionNumber int) (*http.Response, error) {
+					s := serviceRegistry{
+						Version:     version,
+						Publication: time.Now(),
+						Description: "This is a test registry",
+						Services: []service{
+							{
+								[]string{"200.160.0.0/20"},
+								[]string{"https://rdap.beta.registro.br"},
+							},
+						},
+					}
+
+					data, err := json.Marshal(s)
+					if err != nil {
+						t.Fatal(err)
+					}
+
+					var response http.Response
+					response.StatusCode = http.StatusOK
+					response.Header = http.Header{
+						"Content-Type": []string{"application/rdap+json"},
+					}
+					response.Body = nopCloser{bytes.NewBuffer(data)}
+					return &response, nil
+				},
+				"https://rdap.beta.registro.br/ip/200.160.0.0/20": func(executionNumber int) (*http.Response, error) {
+					ipnetwork := protocol.IPNetwork{
+						ObjectClassName: "ipnetwork",
+						Handle:          "200.160.0.0/20",
+					}
+
+					data, err := json.Marshal(ipnetwork)
+					if err != nil {
+						t.Fatal(err)
+					}
+
+					var response http.Response
+					response.StatusCode = http.StatusOK
+					response.Header = http.Header{
+						"Content-Type": []string{"application/rdap+json"},
+					}
+					response.Body = nopCloser{bytes.NewBuffer(data)}
+					return &response, nil
+				},
+			},
+			cacheDetector: CacheDetector(func(resp *http.Response) bool {
+				return resp.Header.Get("X-From-Cache") == "1"
+			}),
+			expected: func() *http.Response {
+				ipnetwork := protocol.IPNetwork{
+					ObjectClassName: "ipnetwork",
+					Handle:          "200.160.0.0/20",
+				}
+
+				data, err := json.Marshal(ipnetwork)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				var response http.Response
+				response.StatusCode = http.StatusOK
+				response.Header = http.Header{
+					"Content-Type": []string{"application/rdap+json"},
+				}
+				response.Body = nopCloser{bytes.NewBuffer(data)}
+				return &response
+			}(),
+		},
+		{
+			description:   "it should retrieve the URL from bootstrap and query the RDAP server correctly (ip network v6)",
+			queryType:     QueryTypeIP,
+			queryValue:    "2001:12ff:2::/48",
+			xForwardedFor: "200.160.2.3",
+			bootstrapURI:  "https://data.iana.org/rdap/%s.json",
+			httpClient: map[string]func(int) (*http.Response, error){
+				"https://data.iana.org/rdap/ipv6.json": func(executionNumber int) (*http.Response, error) {
+					s := serviceRegistry{
+						Version:     version,
+						Publication: time.Now(),
+						Description: "This is a test registry",
+						Services: []service{
+							{
+								[]string{"2001:12ff::/20"},
+								[]string{"https://rdap.beta.registro.br"},
+							},
+						},
+					}
+
+					data, err := json.Marshal(s)
+					if err != nil {
+						t.Fatal(err)
+					}
+
+					var response http.Response
+					response.StatusCode = http.StatusOK
+					response.Header = http.Header{
+						"Content-Type": []string{"application/rdap+json"},
+					}
+					response.Body = nopCloser{bytes.NewBuffer(data)}
+					return &response, nil
+				},
+				"https://rdap.beta.registro.br/ip/2001:12ff:2::/48": func(executionNumber int) (*http.Response, error) {
+					ipnetwork := protocol.IPNetwork{
+						ObjectClassName: "ipnetwork",
+						Handle:          "2001:12ff:2::/48",
+					}
+
+					data, err := json.Marshal(ipnetwork)
+					if err != nil {
+						t.Fatal(err)
+					}
+
+					var response http.Response
+					response.StatusCode = http.StatusOK
+					response.Header = http.Header{
+						"Content-Type": []string{"application/rdap+json"},
+					}
+					response.Body = nopCloser{bytes.NewBuffer(data)}
+					return &response, nil
+				},
+			},
+			cacheDetector: CacheDetector(func(resp *http.Response) bool {
+				return resp.Header.Get("X-From-Cache") == "1"
+			}),
+			expected: func() *http.Response {
+				ipnetwork := protocol.IPNetwork{
+					ObjectClassName: "ipnetwork",
+					Handle:          "2001:12ff:2::/48",
+				}
+
+				data, err := json.Marshal(ipnetwork)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				var response http.Response
+				response.StatusCode = http.StatusOK
+				response.Header = http.Header{
+					"Content-Type": []string{"application/rdap+json"},
+				}
+				response.Body = nopCloser{bytes.NewBuffer(data)}
+				return &response
+			}(),
+		},
+		{
 			description:   "it should ignore entity bootstrap and query the RDAP server directly",
 			uris:          []string{"https://rdap.beta.registro.br"},
 			queryType:     QueryTypeEntity,
 			queryValue:    "h_05506560000136-NICBR",
 			xForwardedFor: "200.160.2.3",
 			bootstrapURI:  "https://data.iana.org/rdap/%s.json",
-			httpClient: map[string]func() (*http.Response, error){
-				"https://rdap.beta.registro.br/entity/h_05506560000136-NICBR": func() (*http.Response, error) {
+			httpClient: map[string]func(int) (*http.Response, error){
+				"https://rdap.beta.registro.br/entity/h_05506560000136-NICBR": func(executionNumber int) (*http.Response, error) {
 					entity := protocol.Entity{
 						ObjectClassName: "entity",
 						Handle:          "05.506.560/0001-36",
@@ -362,8 +744,8 @@ func TestBootstrap(t *testing.T) {
 			queryValue:    "example.com",
 			xForwardedFor: "200.160.2.3",
 			bootstrapURI:  "https://data.iana.org/rdap/%s.json",
-			httpClient: map[string]func() (*http.Response, error){
-				"https://data.iana.org/rdap/dns.json": func() (*http.Response, error) {
+			httpClient: map[string]func(int) (*http.Response, error){
+				"https://data.iana.org/rdap/dns.json": func(executionNumber int) (*http.Response, error) {
 					return nil, fmt.Errorf("I'm a crazy error!")
 				},
 			},
@@ -375,8 +757,8 @@ func TestBootstrap(t *testing.T) {
 			queryValue:    "example.com",
 			xForwardedFor: "200.160.2.3",
 			bootstrapURI:  "https://data.iana.org/rdap/%s.json",
-			httpClient: map[string]func() (*http.Response, error){
-				"https://data.iana.org/rdap/dns.json": func() (*http.Response, error) {
+			httpClient: map[string]func(int) (*http.Response, error){
+				"https://data.iana.org/rdap/dns.json": func(executionNumber int) (*http.Response, error) {
 					var response http.Response
 					response.StatusCode = http.StatusInternalServerError
 					return &response, nil
@@ -390,8 +772,8 @@ func TestBootstrap(t *testing.T) {
 			queryValue:    "example.com",
 			xForwardedFor: "200.160.2.3",
 			bootstrapURI:  "https://data.iana.org/rdap/%s.json",
-			httpClient: map[string]func() (*http.Response, error){
-				"https://data.iana.org/rdap/dns.json": func() (*http.Response, error) {
+			httpClient: map[string]func(int) (*http.Response, error){
+				"https://data.iana.org/rdap/dns.json": func(executionNumber int) (*http.Response, error) {
 					var response http.Response
 					response.StatusCode = http.StatusOK
 					response.Body = nopCloser{bytes.NewBufferString(`{{{{`)}
@@ -406,8 +788,8 @@ func TestBootstrap(t *testing.T) {
 			queryValue:    "example.com",
 			xForwardedFor: "200.160.2.3",
 			bootstrapURI:  "https://data.iana.org/rdap/%s.json",
-			httpClient: map[string]func() (*http.Response, error){
-				"https://data.iana.org/rdap/dns.json": func() (*http.Response, error) {
+			httpClient: map[string]func(int) (*http.Response, error){
+				"https://data.iana.org/rdap/dns.json": func(executionNumber int) (*http.Response, error) {
 					s := serviceRegistry{
 						Version:     version + "x",
 						Publication: time.Now(),
@@ -430,15 +812,136 @@ func TestBootstrap(t *testing.T) {
 			},
 			expectedError: fmt.Errorf("incompatible bootstrap specification version: %s (expecting %s)", version+"x", version),
 		},
+		{
+			description:   "it should ignore cache when there's no match for domain",
+			queryType:     QueryTypeDomain,
+			queryValue:    "example.com",
+			xForwardedFor: "200.160.2.3",
+			bootstrapURI:  "https://data.iana.org/rdap/%s.json",
+			httpClient: map[string]func(int) (*http.Response, error){
+				"https://data.iana.org/rdap/dns.json": func(executionNumber int) (*http.Response, error) {
+					switch executionNumber {
+					case 1:
+						s := serviceRegistry{
+							Version:     version,
+							Publication: time.Now(),
+							Description: "This is a test registry",
+							Services:    []service{},
+						}
+
+						data, err := json.Marshal(s)
+						if err != nil {
+							t.Fatal(err)
+						}
+
+						var response http.Response
+						response.StatusCode = http.StatusOK
+						response.Header = http.Header{
+							"Content-Type": []string{"application/rdap+json"},
+							"X-From-Cache": []string{"1"},
+						}
+						response.Body = nopCloser{bytes.NewBuffer(data)}
+						return &response, nil
+
+					default:
+						s := serviceRegistry{
+							Version:     version,
+							Publication: time.Now(),
+							Description: "This is a test registry",
+							Services: []service{
+								{
+									[]string{"com"},
+									[]string{"https://rdap.beta.registro.br"},
+								},
+							},
+						}
+
+						data, err := json.Marshal(s)
+						if err != nil {
+							t.Fatal(err)
+						}
+
+						var response http.Response
+						response.StatusCode = http.StatusOK
+						response.Header = http.Header{
+							"Content-Type": []string{"application/rdap+json"},
+						}
+						response.Body = nopCloser{bytes.NewBuffer(data)}
+						return &response, nil
+					}
+				},
+				"https://rdap.beta.registro.br/domain/example.com": func(executionNumber int) (*http.Response, error) {
+					domain := protocol.Domain{
+						ObjectClassName: "domain",
+						Handle:          "example.com",
+						LDHName:         "example.com",
+					}
+
+					data, err := json.Marshal(domain)
+					if err != nil {
+						t.Fatal(err)
+					}
+
+					var response http.Response
+					response.StatusCode = http.StatusOK
+					response.Header = http.Header{
+						"Content-Type": []string{"application/rdap+json"},
+					}
+					response.Body = nopCloser{bytes.NewBuffer(data)}
+					return &response, nil
+				},
+			},
+			lookupNS: func(name string) ([]*net.NS, error) {
+				return []*net.NS{
+					{Host: "ns1.example.com"},
+				}, nil
+			},
+			cacheDetector: CacheDetector(func(resp *http.Response) bool {
+				return resp.Header.Get("X-From-Cache") == "1"
+			}),
+			expected: func() *http.Response {
+				domain := protocol.Domain{
+					ObjectClassName: "domain",
+					Handle:          "example.com",
+					LDHName:         "example.com",
+				}
+
+				data, err := json.Marshal(domain)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				var response http.Response
+				response.StatusCode = http.StatusOK
+				response.Header = http.Header{
+					"Content-Type": []string{"application/rdap+json"},
+				}
+				response.Body = nopCloser{bytes.NewBuffer(data)}
+				return &response
+			}(),
+		},
 	}
 
+	oldLookupNS := lookupNS
+	defer func() {
+		lookupNS = oldLookupNS
+	}()
+
 	for i, item := range data {
+		if item.lookupNS == nil {
+			lookupNS = oldLookupNS
+		} else {
+			lookupNS = item.lookupNS
+		}
+
+		httpCalls := 0
 		httpClient := httpClientFunc(func(r *http.Request) (*http.Response, error) {
 			h, ok := item.httpClient[r.URL.String()]
 			if !ok {
 				return nil, fmt.Errorf("no handler for URL “%s”", r.URL.String())
 			}
-			return h()
+			httpCalls++
+			return h(httpCalls)
 		})
 
 		fetcher := NewBootstrapFetcher(httpClient, item.xForwardedFor, item.bootstrapURI, item.cacheDetector)
@@ -446,7 +949,7 @@ func TestBootstrap(t *testing.T) {
 
 		if item.expectedError != nil {
 			if fmt.Sprintf("%v", item.expectedError) != fmt.Sprintf("%v", err) {
-				t.Errorf("[%d] %s: expected error “%s”, got “%s”", i, item.description, item.expectedError, err)
+				t.Errorf("[%d] %s: expected error “%v”, got “%v”", i, item.description, item.expectedError, err)
 			}
 
 		} else if err != nil {

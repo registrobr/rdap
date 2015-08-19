@@ -374,8 +374,8 @@ func TestClientIPNetwork(t *testing.T) {
 					return nil, fmt.Errorf("expected uris “%#v” and got “%#v”", expectedURIs, uris)
 				}
 
-				if queryType != QueryTypeIPNetwork {
-					return nil, fmt.Errorf("expected query type “%s” and got “%s”", QueryTypeIPNetwork, queryType)
+				if queryType != QueryTypeIP {
+					return nil, fmt.Errorf("expected query type “%s” and got “%s”", QueryTypeIP, queryType)
 				}
 
 				if queryValue != item.ipNetwork.String() {

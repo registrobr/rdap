@@ -85,7 +85,7 @@ func (c *Client) IPNetwork(ipnet *net.IPNet) (*protocol.IPNetwork, error) {
 		return nil, fmt.Errorf("undefined IP network")
 	}
 
-	resp, err := c.Transport.Fetch(c.URIs, QueryTypeIPNetwork, ipnet.String())
+	resp, err := c.Transport.Fetch(c.URIs, QueryTypeIP, ipnet.String())
 	if err != nil {
 		return nil, err
 	}
