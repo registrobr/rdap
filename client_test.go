@@ -7,6 +7,7 @@ import (
 	"net"
 	"net/http"
 	"reflect"
+	"strconv"
 	"testing"
 
 	"github.com/registrobr/rdap/protocol"
@@ -16,45 +17,28 @@ func TestClientDomain(t *testing.T) {
 	data := []struct {
 		description   string
 		fqdn          string
-		client        Client
+		client        func() (*http.Response, error)
 		expected      *protocol.Domain
 		expectedError error
 	}{
 		{
 			description: "it should return a valid domain",
 			fqdn:        "example.com",
-			client: Client{
-				URIs: []string{"rdap.example.com"},
-				Transport: fetcherFunc(func(uris []string, queryType QueryType, queryValue string) (*http.Response, error) {
-					expectedURIs := []string{"rdap.example.com"}
-					if !reflect.DeepEqual(expectedURIs, uris) {
-						return nil, fmt.Errorf("expected uris “%#v” and got “%#v”", expectedURIs, uris)
-					}
+			client: func() (*http.Response, error) {
+				domain := protocol.Domain{
+					ObjectClassName: "domain",
+					Handle:          "example.com",
+					LDHName:         "example.com",
+				}
 
-					if queryType != QueryTypeDomain {
-						return nil, fmt.Errorf("expected query type “%s” and got “%s”", QueryTypeDomain, queryType)
-					}
+				data, err := json.Marshal(domain)
+				if err != nil {
+					t.Fatal(err)
+				}
 
-					expectedFQDN := "example.com"
-					if queryValue != expectedFQDN {
-						return nil, fmt.Errorf("expected FQDN “%s” and got “%s”", expectedFQDN, queryValue)
-					}
-
-					domain := protocol.Domain{
-						ObjectClassName: "domain",
-						Handle:          "example.com",
-						LDHName:         "example.com",
-					}
-
-					data, err := json.Marshal(domain)
-					if err != nil {
-						t.Fatal(err)
-					}
-
-					var response http.Response
-					response.Body = nopCloser{bytes.NewBuffer(data)}
-					return &response, nil
-				}),
+				var response http.Response
+				response.Body = nopCloser{bytes.NewBuffer(data)}
+				return &response, nil
 			},
 			expected: &protocol.Domain{
 				ObjectClassName: "domain",
@@ -65,59 +49,45 @@ func TestClientDomain(t *testing.T) {
 		{
 			description: "it should fail to query a domain",
 			fqdn:        "example.com",
-			client: Client{
-				URIs: []string{"rdap.example.com"},
-				Transport: fetcherFunc(func(uris []string, queryType QueryType, queryValue string) (*http.Response, error) {
-					expectedURIs := []string{"rdap.example.com"}
-					if !reflect.DeepEqual(expectedURIs, uris) {
-						return nil, fmt.Errorf("expected uris “%#v” and got “%#v”", expectedURIs, uris)
-					}
-
-					if queryType != QueryTypeDomain {
-						return nil, fmt.Errorf("expected query type “%s” and got “%s”", QueryTypeDomain, queryType)
-					}
-
-					expectedFQDN := "example.com"
-					if queryValue != expectedFQDN {
-						return nil, fmt.Errorf("expected FQDN “%s” and got “%s”", expectedFQDN, queryValue)
-					}
-
-					return nil, fmt.Errorf("I'm a crazy error!")
-				}),
+			client: func() (*http.Response, error) {
+				return nil, fmt.Errorf("I'm a crazy error!")
 			},
 			expectedError: fmt.Errorf("I'm a crazy error!"),
 		},
 		{
 			description: "it should fail to decode the domain response",
 			fqdn:        "example.com",
-			client: Client{
-				URIs: []string{"rdap.example.com"},
-				Transport: fetcherFunc(func(uris []string, queryType QueryType, queryValue string) (*http.Response, error) {
-					expectedURIs := []string{"rdap.example.com"}
-					if !reflect.DeepEqual(expectedURIs, uris) {
-						return nil, fmt.Errorf("expected uris “%#v” and got “%#v”", expectedURIs, uris)
-					}
-
-					if queryType != QueryTypeDomain {
-						return nil, fmt.Errorf("expected query type “%s” and got “%s”", QueryTypeDomain, queryType)
-					}
-
-					expectedFQDN := "example.com"
-					if queryValue != expectedFQDN {
-						return nil, fmt.Errorf("expected FQDN “%s” and got “%s”", expectedFQDN, queryValue)
-					}
-
-					var response http.Response
-					response.Body = nopCloser{bytes.NewBufferString(`{{{{`)}
-					return &response, nil
-				}),
+			client: func() (*http.Response, error) {
+				var response http.Response
+				response.Body = nopCloser{bytes.NewBufferString(`{{{{`)}
+				return &response, nil
 			},
 			expectedError: fmt.Errorf("invalid character '{' looking for beginning of object key string"),
 		},
 	}
 
 	for i, item := range data {
-		domain, err := item.client.Domain(item.fqdn)
+		client := Client{
+			URIs: []string{"rdap.example.com"},
+			Transport: fetcherFunc(func(uris []string, queryType QueryType, queryValue string) (*http.Response, error) {
+				expectedURIs := []string{"rdap.example.com"}
+				if !reflect.DeepEqual(expectedURIs, uris) {
+					return nil, fmt.Errorf("expected uris “%#v” and got “%#v”", expectedURIs, uris)
+				}
+
+				if queryType != QueryTypeDomain {
+					return nil, fmt.Errorf("expected query type “%s” and got “%s”", QueryTypeDomain, queryType)
+				}
+
+				if queryValue != item.fqdn {
+					return nil, fmt.Errorf("expected FQDN “%s” and got “%s”", item.fqdn, queryValue)
+				}
+
+				return item.client()
+			}),
+		}
+
+		domain, err := client.Domain(item.fqdn)
 
 		if item.expectedError != nil {
 			if fmt.Sprintf("%v", item.expectedError) != fmt.Sprintf("%v", err) {
@@ -135,46 +105,29 @@ func TestClientASN(t *testing.T) {
 	data := []struct {
 		description   string
 		asn           uint32
-		client        Client
+		client        func() (*http.Response, error)
 		expected      *protocol.AS
 		expectedError error
 	}{
 		{
 			description: "it should return a valid entity",
 			asn:         1234,
-			client: Client{
-				URIs: []string{"rdap.example.com"},
-				Transport: fetcherFunc(func(uris []string, queryType QueryType, queryValue string) (*http.Response, error) {
-					expectedURIs := []string{"rdap.example.com"}
-					if !reflect.DeepEqual(expectedURIs, uris) {
-						return nil, fmt.Errorf("expected uris “%#v” and got “%#v”", expectedURIs, uris)
-					}
+			client: func() (*http.Response, error) {
+				as := protocol.AS{
+					ObjectClassName: "autnum",
+					Handle:          "1234",
+					StartAutnum:     1234,
+					EndAutnum:       1234,
+				}
 
-					if queryType != QueryTypeAutnum {
-						return nil, fmt.Errorf("expected query type “%s” and got “%s”", QueryTypeAutnum, queryType)
-					}
+				data, err := json.Marshal(as)
+				if err != nil {
+					t.Fatal(err)
+				}
 
-					expectedASN := "1234"
-					if queryValue != expectedASN {
-						return nil, fmt.Errorf("expected ASN “%s” and got “%s”", expectedASN, queryValue)
-					}
-
-					as := protocol.AS{
-						ObjectClassName: "autnum",
-						Handle:          "1234",
-						StartAutnum:     1234,
-						EndAutnum:       1234,
-					}
-
-					data, err := json.Marshal(as)
-					if err != nil {
-						t.Fatal(err)
-					}
-
-					var response http.Response
-					response.Body = nopCloser{bytes.NewBuffer(data)}
-					return &response, nil
-				}),
+				var response http.Response
+				response.Body = nopCloser{bytes.NewBuffer(data)}
+				return &response, nil
 			},
 			expected: &protocol.AS{
 				ObjectClassName: "autnum",
@@ -186,59 +139,45 @@ func TestClientASN(t *testing.T) {
 		{
 			description: "it should fail to query an ASN",
 			asn:         1234,
-			client: Client{
-				URIs: []string{"rdap.example.com"},
-				Transport: fetcherFunc(func(uris []string, queryType QueryType, queryValue string) (*http.Response, error) {
-					expectedURIs := []string{"rdap.example.com"}
-					if !reflect.DeepEqual(expectedURIs, uris) {
-						return nil, fmt.Errorf("expected uris “%#v” and got “%#v”", expectedURIs, uris)
-					}
-
-					if queryType != QueryTypeAutnum {
-						return nil, fmt.Errorf("expected query type “%s” and got “%s”", QueryTypeAutnum, queryType)
-					}
-
-					expectedASN := "1234"
-					if queryValue != expectedASN {
-						return nil, fmt.Errorf("expected ASN “%s” and got “%s”", expectedASN, queryValue)
-					}
-
-					return nil, fmt.Errorf("I'm a crazy error!")
-				}),
+			client: func() (*http.Response, error) {
+				return nil, fmt.Errorf("I'm a crazy error!")
 			},
 			expectedError: fmt.Errorf("I'm a crazy error!"),
 		},
 		{
 			description: "it should fail to decode the AS response",
 			asn:         1234,
-			client: Client{
-				URIs: []string{"rdap.example.com"},
-				Transport: fetcherFunc(func(uris []string, queryType QueryType, queryValue string) (*http.Response, error) {
-					expectedURIs := []string{"rdap.example.com"}
-					if !reflect.DeepEqual(expectedURIs, uris) {
-						return nil, fmt.Errorf("expected uris “%#v” and got “%#v”", expectedURIs, uris)
-					}
-
-					if queryType != QueryTypeAutnum {
-						return nil, fmt.Errorf("expected query type “%s” and got “%s”", QueryTypeAutnum, queryType)
-					}
-
-					expectedASN := "1234"
-					if queryValue != expectedASN {
-						return nil, fmt.Errorf("expected ASN “%s” and got “%s”", expectedASN, queryValue)
-					}
-
-					var response http.Response
-					response.Body = nopCloser{bytes.NewBufferString(`{{{{`)}
-					return &response, nil
-				}),
+			client: func() (*http.Response, error) {
+				var response http.Response
+				response.Body = nopCloser{bytes.NewBufferString(`{{{{`)}
+				return &response, nil
 			},
 			expectedError: fmt.Errorf("invalid character '{' looking for beginning of object key string"),
 		},
 	}
 
 	for i, item := range data {
-		as, err := item.client.ASN(item.asn)
+		client := Client{
+			URIs: []string{"rdap.example.com"},
+			Transport: fetcherFunc(func(uris []string, queryType QueryType, queryValue string) (*http.Response, error) {
+				expectedURIs := []string{"rdap.example.com"}
+				if !reflect.DeepEqual(expectedURIs, uris) {
+					return nil, fmt.Errorf("expected uris “%#v” and got “%#v”", expectedURIs, uris)
+				}
+
+				if queryType != QueryTypeAutnum {
+					return nil, fmt.Errorf("expected query type “%s” and got “%s”", QueryTypeAutnum, queryType)
+				}
+
+				if queryValue != strconv.FormatUint(uint64(item.asn), 10) {
+					return nil, fmt.Errorf("expected ASN “%d” and got “%s”", item.asn, queryValue)
+				}
+
+				return item.client()
+			}),
+		}
+
+		as, err := client.ASN(item.asn)
 
 		if item.expectedError != nil {
 			if fmt.Sprintf("%v", item.expectedError) != fmt.Sprintf("%v", err) {
@@ -256,44 +195,27 @@ func TestClientEntity(t *testing.T) {
 	data := []struct {
 		description   string
 		entity        string
-		client        Client
+		client        func() (*http.Response, error)
 		expected      *protocol.Entity
 		expectedError error
 	}{
 		{
 			description: "it should return a valid entity",
 			entity:      "h_005506560000136-NICBR",
-			client: Client{
-				URIs: []string{"rdap.example.com"},
-				Transport: fetcherFunc(func(uris []string, queryType QueryType, queryValue string) (*http.Response, error) {
-					expectedURIs := []string{"rdap.example.com"}
-					if !reflect.DeepEqual(expectedURIs, uris) {
-						return nil, fmt.Errorf("expected uris “%#v” and got “%#v”", expectedURIs, uris)
-					}
+			client: func() (*http.Response, error) {
+				entity := protocol.Entity{
+					ObjectClassName: "entity",
+					Handle:          "005.506.560/0001-36",
+				}
 
-					if queryType != QueryTypeEntity {
-						return nil, fmt.Errorf("expected query type “%s” and got “%s”", QueryTypeEntity, queryType)
-					}
+				data, err := json.Marshal(entity)
+				if err != nil {
+					t.Fatal(err)
+				}
 
-					expectedEntity := "h_005506560000136-NICBR"
-					if queryValue != expectedEntity {
-						return nil, fmt.Errorf("expected entity “%s” and got “%s”", expectedEntity, queryValue)
-					}
-
-					entity := protocol.Entity{
-						ObjectClassName: "entity",
-						Handle:          "005.506.560/0001-36",
-					}
-
-					data, err := json.Marshal(entity)
-					if err != nil {
-						t.Fatal(err)
-					}
-
-					var response http.Response
-					response.Body = nopCloser{bytes.NewBuffer(data)}
-					return &response, nil
-				}),
+				var response http.Response
+				response.Body = nopCloser{bytes.NewBuffer(data)}
+				return &response, nil
 			},
 			expected: &protocol.Entity{
 				ObjectClassName: "entity",
@@ -303,59 +225,45 @@ func TestClientEntity(t *testing.T) {
 		{
 			description: "it should fail to query an entity",
 			entity:      "h_005506560000136-NICBR",
-			client: Client{
-				URIs: []string{"rdap.example.com"},
-				Transport: fetcherFunc(func(uris []string, queryType QueryType, queryValue string) (*http.Response, error) {
-					expectedURIs := []string{"rdap.example.com"}
-					if !reflect.DeepEqual(expectedURIs, uris) {
-						return nil, fmt.Errorf("expected uris “%#v” and got “%#v”", expectedURIs, uris)
-					}
-
-					if queryType != QueryTypeEntity {
-						return nil, fmt.Errorf("expected query type “%s” and got “%s”", QueryTypeEntity, queryType)
-					}
-
-					expectedEntity := "h_005506560000136-NICBR"
-					if queryValue != expectedEntity {
-						return nil, fmt.Errorf("expected entity “%s” and got “%s”", expectedEntity, queryValue)
-					}
-
-					return nil, fmt.Errorf("I'm a crazy error!")
-				}),
+			client: func() (*http.Response, error) {
+				return nil, fmt.Errorf("I'm a crazy error!")
 			},
 			expectedError: fmt.Errorf("I'm a crazy error!"),
 		},
 		{
 			description: "it should fail to decode the entity response",
 			entity:      "h_005506560000136-NICBR",
-			client: Client{
-				URIs: []string{"rdap.example.com"},
-				Transport: fetcherFunc(func(uris []string, queryType QueryType, queryValue string) (*http.Response, error) {
-					expectedURIs := []string{"rdap.example.com"}
-					if !reflect.DeepEqual(expectedURIs, uris) {
-						return nil, fmt.Errorf("expected uris “%#v” and got “%#v”", expectedURIs, uris)
-					}
-
-					if queryType != QueryTypeEntity {
-						return nil, fmt.Errorf("expected query type “%s” and got “%s”", QueryTypeEntity, queryType)
-					}
-
-					expectedEntity := "h_005506560000136-NICBR"
-					if queryValue != expectedEntity {
-						return nil, fmt.Errorf("expected entity “%s” and got “%s”", expectedEntity, queryValue)
-					}
-
-					var response http.Response
-					response.Body = nopCloser{bytes.NewBufferString(`{{{{`)}
-					return &response, nil
-				}),
+			client: func() (*http.Response, error) {
+				var response http.Response
+				response.Body = nopCloser{bytes.NewBufferString(`{{{{`)}
+				return &response, nil
 			},
 			expectedError: fmt.Errorf("invalid character '{' looking for beginning of object key string"),
 		},
 	}
 
 	for i, item := range data {
-		entity, err := item.client.Entity(item.entity)
+		client := Client{
+			URIs: []string{"rdap.example.com"},
+			Transport: fetcherFunc(func(uris []string, queryType QueryType, queryValue string) (*http.Response, error) {
+				expectedURIs := []string{"rdap.example.com"}
+				if !reflect.DeepEqual(expectedURIs, uris) {
+					return nil, fmt.Errorf("expected uris “%#v” and got “%#v”", expectedURIs, uris)
+				}
+
+				if queryType != QueryTypeEntity {
+					return nil, fmt.Errorf("expected query type “%s” and got “%s”", QueryTypeEntity, queryType)
+				}
+
+				if queryValue != item.entity {
+					return nil, fmt.Errorf("expected entity “%s” and got “%s”", item.entity, queryValue)
+				}
+
+				return item.client()
+			}),
+		}
+
+		entity, err := client.Entity(item.entity)
 
 		if item.expectedError != nil {
 			if fmt.Sprintf("%v", item.expectedError) != fmt.Sprintf("%v", err) {
@@ -373,7 +281,7 @@ func TestClientIPNetwork(t *testing.T) {
 	data := []struct {
 		description   string
 		ipNetwork     *net.IPNet
-		client        Client
+		client        func() (*http.Response, error)
 		expected      *protocol.IPNetwork
 		expectedError error
 	}{
@@ -387,37 +295,20 @@ func TestClientIPNetwork(t *testing.T) {
 
 				return ipNetwork
 			}(),
-			client: Client{
-				URIs: []string{"rdap.example.com"},
-				Transport: fetcherFunc(func(uris []string, queryType QueryType, queryValue string) (*http.Response, error) {
-					expectedURIs := []string{"rdap.example.com"}
-					if !reflect.DeepEqual(expectedURIs, uris) {
-						return nil, fmt.Errorf("expected uris “%#v” and got “%#v”", expectedURIs, uris)
-					}
+			client: func() (*http.Response, error) {
+				ipNetwork := protocol.IPNetwork{
+					ObjectClassName: "ipnetwork",
+					Handle:          "200.160.0.0/20",
+				}
 
-					if queryType != QueryTypeIPNetwork {
-						return nil, fmt.Errorf("expected query type “%s” and got “%s”", QueryTypeIPNetwork, queryType)
-					}
+				data, err := json.Marshal(ipNetwork)
+				if err != nil {
+					t.Fatal(err)
+				}
 
-					expectedIPNetwork := "200.160.0.0/20"
-					if queryValue != expectedIPNetwork {
-						return nil, fmt.Errorf("expected IP network “%s” and got “%s”", expectedIPNetwork, queryValue)
-					}
-
-					ipNetwork := protocol.IPNetwork{
-						ObjectClassName: "ipnetwork",
-						Handle:          "200.160.0.0/20",
-					}
-
-					data, err := json.Marshal(ipNetwork)
-					if err != nil {
-						t.Fatal(err)
-					}
-
-					var response http.Response
-					response.Body = nopCloser{bytes.NewBuffer(data)}
-					return &response, nil
-				}),
+				var response http.Response
+				response.Body = nopCloser{bytes.NewBuffer(data)}
+				return &response, nil
 			},
 			expected: &protocol.IPNetwork{
 				ObjectClassName: "ipnetwork",
@@ -438,25 +329,8 @@ func TestClientIPNetwork(t *testing.T) {
 
 				return ipNetwork
 			}(),
-			client: Client{
-				URIs: []string{"rdap.example.com"},
-				Transport: fetcherFunc(func(uris []string, queryType QueryType, queryValue string) (*http.Response, error) {
-					expectedURIs := []string{"rdap.example.com"}
-					if !reflect.DeepEqual(expectedURIs, uris) {
-						return nil, fmt.Errorf("expected uris “%#v” and got “%#v”", expectedURIs, uris)
-					}
-
-					if queryType != QueryTypeIPNetwork {
-						return nil, fmt.Errorf("expected query type “%s” and got “%s”", QueryTypeIPNetwork, queryType)
-					}
-
-					expectedIPNetwork := "200.160.0.0/20"
-					if queryValue != expectedIPNetwork {
-						return nil, fmt.Errorf("expected IP network “%s” and got “%s”", expectedIPNetwork, queryValue)
-					}
-
-					return nil, fmt.Errorf("I'm a crazy error!")
-				}),
+			client: func() (*http.Response, error) {
+				return nil, fmt.Errorf("I'm a crazy error!")
 			},
 			expectedError: fmt.Errorf("I'm a crazy error!"),
 		},
@@ -470,34 +344,37 @@ func TestClientIPNetwork(t *testing.T) {
 
 				return ipNetwork
 			}(),
-			client: Client{
-				URIs: []string{"rdap.example.com"},
-				Transport: fetcherFunc(func(uris []string, queryType QueryType, queryValue string) (*http.Response, error) {
-					expectedURIs := []string{"rdap.example.com"}
-					if !reflect.DeepEqual(expectedURIs, uris) {
-						return nil, fmt.Errorf("expected uris “%#v” and got “%#v”", expectedURIs, uris)
-					}
-
-					if queryType != QueryTypeIPNetwork {
-						return nil, fmt.Errorf("expected query type “%s” and got “%s”", QueryTypeIPNetwork, queryType)
-					}
-
-					expectedIPNetwork := "200.160.0.0/20"
-					if queryValue != expectedIPNetwork {
-						return nil, fmt.Errorf("expected IP network “%s” and got “%s”", expectedIPNetwork, queryValue)
-					}
-
-					var response http.Response
-					response.Body = nopCloser{bytes.NewBufferString(`{{{{`)}
-					return &response, nil
-				}),
+			client: func() (*http.Response, error) {
+				var response http.Response
+				response.Body = nopCloser{bytes.NewBufferString(`{{{{`)}
+				return &response, nil
 			},
 			expectedError: fmt.Errorf("invalid character '{' looking for beginning of object key string"),
 		},
 	}
 
 	for i, item := range data {
-		ipNetwork, err := item.client.IPNetwork(item.ipNetwork)
+		client := Client{
+			URIs: []string{"rdap.example.com"},
+			Transport: fetcherFunc(func(uris []string, queryType QueryType, queryValue string) (*http.Response, error) {
+				expectedURIs := []string{"rdap.example.com"}
+				if !reflect.DeepEqual(expectedURIs, uris) {
+					return nil, fmt.Errorf("expected uris “%#v” and got “%#v”", expectedURIs, uris)
+				}
+
+				if queryType != QueryTypeIPNetwork {
+					return nil, fmt.Errorf("expected query type “%s” and got “%s”", QueryTypeIPNetwork, queryType)
+				}
+
+				if queryValue != item.ipNetwork.String() {
+					return nil, fmt.Errorf("expected IP network “%s” and got “%s”", item.ipNetwork, queryValue)
+				}
+
+				return item.client()
+			}),
+		}
+
+		ipNetwork, err := client.IPNetwork(item.ipNetwork)
 
 		if item.expectedError != nil {
 			if fmt.Sprintf("%v", item.expectedError) != fmt.Sprintf("%v", err) {
@@ -515,44 +392,27 @@ func TestClientIP(t *testing.T) {
 	data := []struct {
 		description   string
 		ip            net.IP
-		client        Client
+		client        func() (*http.Response, error)
 		expected      *protocol.IPNetwork
 		expectedError error
 	}{
 		{
 			description: "it should return a valid IP network",
 			ip:          net.ParseIP("200.160.2.3"),
-			client: Client{
-				URIs: []string{"rdap.example.com"},
-				Transport: fetcherFunc(func(uris []string, queryType QueryType, queryValue string) (*http.Response, error) {
-					expectedURIs := []string{"rdap.example.com"}
-					if !reflect.DeepEqual(expectedURIs, uris) {
-						return nil, fmt.Errorf("expected uris “%#v” and got “%#v”", expectedURIs, uris)
-					}
+			client: func() (*http.Response, error) {
+				ipNetwork := protocol.IPNetwork{
+					ObjectClassName: "ipnetwork",
+					Handle:          "200.160.0.0/20",
+				}
 
-					if queryType != QueryTypeIP {
-						return nil, fmt.Errorf("expected query type “%s” and got “%s”", QueryTypeIP, queryType)
-					}
+				data, err := json.Marshal(ipNetwork)
+				if err != nil {
+					t.Fatal(err)
+				}
 
-					expectedIP := "200.160.2.3"
-					if queryValue != expectedIP {
-						return nil, fmt.Errorf("expected IP “%s” and got “%s”", expectedIP, queryValue)
-					}
-
-					ipNetwork := protocol.IPNetwork{
-						ObjectClassName: "ipnetwork",
-						Handle:          "200.160.0.0/20",
-					}
-
-					data, err := json.Marshal(ipNetwork)
-					if err != nil {
-						t.Fatal(err)
-					}
-
-					var response http.Response
-					response.Body = nopCloser{bytes.NewBuffer(data)}
-					return &response, nil
-				}),
+				var response http.Response
+				response.Body = nopCloser{bytes.NewBuffer(data)}
+				return &response, nil
 			},
 			expected: &protocol.IPNetwork{
 				ObjectClassName: "ipnetwork",
@@ -566,59 +426,45 @@ func TestClientIP(t *testing.T) {
 		{
 			description: "it should fail to query an IP network",
 			ip:          net.ParseIP("200.160.2.3"),
-			client: Client{
-				URIs: []string{"rdap.example.com"},
-				Transport: fetcherFunc(func(uris []string, queryType QueryType, queryValue string) (*http.Response, error) {
-					expectedURIs := []string{"rdap.example.com"}
-					if !reflect.DeepEqual(expectedURIs, uris) {
-						return nil, fmt.Errorf("expected uris “%#v” and got “%#v”", expectedURIs, uris)
-					}
-
-					if queryType != QueryTypeIP {
-						return nil, fmt.Errorf("expected query type “%s” and got “%s”", QueryTypeIP, queryType)
-					}
-
-					expectedIP := "200.160.2.3"
-					if queryValue != expectedIP {
-						return nil, fmt.Errorf("expected IP “%s” and got “%s”", expectedIP, queryValue)
-					}
-
-					return nil, fmt.Errorf("I'm a crazy error!")
-				}),
+			client: func() (*http.Response, error) {
+				return nil, fmt.Errorf("I'm a crazy error!")
 			},
 			expectedError: fmt.Errorf("I'm a crazy error!"),
 		},
 		{
 			description: "it should fail to decode the IP network response",
 			ip:          net.ParseIP("200.160.2.3"),
-			client: Client{
-				URIs: []string{"rdap.example.com"},
-				Transport: fetcherFunc(func(uris []string, queryType QueryType, queryValue string) (*http.Response, error) {
-					expectedURIs := []string{"rdap.example.com"}
-					if !reflect.DeepEqual(expectedURIs, uris) {
-						return nil, fmt.Errorf("expected uris “%#v” and got “%#v”", expectedURIs, uris)
-					}
-
-					if queryType != QueryTypeIP {
-						return nil, fmt.Errorf("expected query type “%s” and got “%s”", QueryTypeIP, queryType)
-					}
-
-					expectedIP := "200.160.2.3"
-					if queryValue != expectedIP {
-						return nil, fmt.Errorf("expected IP “%s” and got “%s”", expectedIP, queryValue)
-					}
-
-					var response http.Response
-					response.Body = nopCloser{bytes.NewBufferString(`{{{{`)}
-					return &response, nil
-				}),
+			client: func() (*http.Response, error) {
+				var response http.Response
+				response.Body = nopCloser{bytes.NewBufferString(`{{{{`)}
+				return &response, nil
 			},
 			expectedError: fmt.Errorf("invalid character '{' looking for beginning of object key string"),
 		},
 	}
 
 	for i, item := range data {
-		ipNetwork, err := item.client.IP(item.ip)
+		client := Client{
+			URIs: []string{"rdap.example.com"},
+			Transport: fetcherFunc(func(uris []string, queryType QueryType, queryValue string) (*http.Response, error) {
+				expectedURIs := []string{"rdap.example.com"}
+				if !reflect.DeepEqual(expectedURIs, uris) {
+					return nil, fmt.Errorf("expected uris “%#v” and got “%#v”", expectedURIs, uris)
+				}
+
+				if queryType != QueryTypeIP {
+					return nil, fmt.Errorf("expected query type “%s” and got “%s”", QueryTypeIP, queryType)
+				}
+
+				if queryValue != item.ip.String() {
+					return nil, fmt.Errorf("expected IP “%s” and got “%s”", item.ip, queryValue)
+				}
+
+				return item.client()
+			}),
+		}
+
+		ipNetwork, err := client.IP(item.ip)
 
 		if item.expectedError != nil {
 			if fmt.Sprintf("%v", item.expectedError) != fmt.Sprintf("%v", err) {

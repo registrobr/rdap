@@ -24,7 +24,7 @@ func TestDefaultFetcherFetch(t *testing.T) {
 		queryType     QueryType
 		queryValue    string
 		xForwardedFor string
-		httpClient    HTTPClient
+		httpClient    func() (*http.Response, error)
 		expected      *http.Response
 		expectedError error
 	}{
@@ -34,17 +34,7 @@ func TestDefaultFetcherFetch(t *testing.T) {
 			queryType:     QueryTypeDomain,
 			queryValue:    "example.com",
 			xForwardedFor: "200.160.2.3",
-			httpClient: httpClientFunc(func(r *http.Request) (*http.Response, error) {
-				expectedURL := "https://rdap.beta.registro.br/domain/example.com"
-				if r.URL.String() != expectedURL {
-					return nil, fmt.Errorf("expected url “%s” and got “%s”", expectedURL, r.URL.String())
-				}
-
-				expectedXForwardedFor := "200.160.2.3"
-				if r.Header.Get("X-Forwarded-For") != expectedXForwardedFor {
-					return nil, fmt.Errorf("expected HTTP header X-Forwarded-For “%s” and got “%s”", expectedXForwardedFor, r.Header.Get("X-Forwarded-For"))
-				}
-
+			httpClient: func() (*http.Response, error) {
 				domain := protocol.Domain{
 					ObjectClassName: "domain",
 					Handle:          "example.com",
@@ -63,7 +53,7 @@ func TestDefaultFetcherFetch(t *testing.T) {
 				}
 				response.Body = nopCloser{bytes.NewBuffer(data)}
 				return &response, nil
-			}),
+			},
 			expected: func() *http.Response {
 				domain := protocol.Domain{
 					ObjectClassName: "domain",
@@ -88,7 +78,24 @@ func TestDefaultFetcherFetch(t *testing.T) {
 	}
 
 	for i, item := range data {
-		fetcher := NewDefaultFetcher(item.httpClient, item.xForwardedFor)
+		httpClient := httpClientFunc(func(r *http.Request) (*http.Response, error) {
+			if len(item.uris) == 0 {
+				t.Fatalf("[%d] %s: no uris informed", i, item.description)
+			}
+
+			expectedURL := fmt.Sprintf("%s/%v/%s", item.uris[0], item.queryType, item.queryValue)
+			if r.URL.String() != expectedURL {
+				return nil, fmt.Errorf("expected url “%s” and got “%s”", expectedURL, r.URL.String())
+			}
+
+			if r.Header.Get("X-Forwarded-For") != item.xForwardedFor {
+				return nil, fmt.Errorf("expected HTTP header X-Forwarded-For “%s” and got “%s”", item.xForwardedFor, r.Header.Get("X-Forwarded-For"))
+			}
+
+			return item.httpClient()
+		})
+
+		fetcher := NewDefaultFetcher(httpClient, item.xForwardedFor)
 		response, err := fetcher.Fetch(item.uris, item.queryType, item.queryValue)
 
 		if item.expectedError != nil {
@@ -109,7 +116,7 @@ func TestBootstrap(t *testing.T) {
 		uris          []string
 		queryType     QueryType
 		queryValue    string
-		httpClient    HTTPClient
+		httpClient    func() (*http.Response, error)
 		xForwardedFor string
 		bootstrapURI  string
 		cacheDetector CacheDetector
@@ -118,7 +125,24 @@ func TestBootstrap(t *testing.T) {
 	}{}
 
 	for i, item := range data {
-		fetcher := NewBootstrapFetcher(item.httpClient, item.xForwardedFor, item.bootstrapURI, item.cacheDetector)
+		httpClient := httpClientFunc(func(r *http.Request) (*http.Response, error) {
+			if len(item.uris) == 0 {
+				t.Fatalf("[%d] %s: no uris informed", i, item.description)
+			}
+
+			expectedURL := fmt.Sprintf("%s/%v/%s", item.uris[0], item.queryType, item.queryValue)
+			if r.URL.String() != expectedURL {
+				return nil, fmt.Errorf("expected url “%s” and got “%s”", expectedURL, r.URL.String())
+			}
+
+			if r.Header.Get("X-Forwarded-For") != item.xForwardedFor {
+				return nil, fmt.Errorf("expected HTTP header X-Forwarded-For “%s” and got “%s”", item.xForwardedFor, r.Header.Get("X-Forwarded-For"))
+			}
+
+			return item.httpClient()
+		})
+
+		fetcher := NewBootstrapFetcher(httpClient, item.xForwardedFor, item.bootstrapURI, item.cacheDetector)
 		response, err := fetcher.Fetch(item.uris, item.queryType, item.queryValue)
 
 		if item.expectedError != nil {
