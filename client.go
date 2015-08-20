@@ -2,22 +2,44 @@ package rdap
 
 import (
 	"encoding/json"
+	"fmt"
 	"net"
+	"net/http"
 	"strconv"
 	"strings"
-
-	"fmt"
 
 	"github.com/registrobr/rdap/Godeps/_workspace/src/github.com/miekg/dns/idn"
 	"github.com/registrobr/rdap/protocol"
 )
 
-// Client stores the HTTP client and the RDAP servers to query for retrieving
-// the desired information. You can also set the X-Forward-For to work as a
-// proxy
+// Client is responsible for building, sending the request and parsing the
+// result. It can set the URIs attribute if you want to query RDAP servers
+// directly without using bootstrap
 type Client struct {
+	// Transport is the network layer that you can fill with a direct query to
+	// the RDAP servers or with an extra layer of RDAP bootstrap strategy
 	Transport Fetcher
-	URIs      []string
+
+	// URIs store the addresses of the RDAP servers that you want to query
+	// directly. Remember that if you use a bootstrap transport layer this
+	// information might not be used
+	URIs []string
+}
+
+// NewClient is an easy way to create a client with bootstrap support or not,
+// depending if you inform direct RDAP addresses. Optionally you can define
+// an X-Fowarded-For HTTP header to work as a proxy client
+func NewClient(URIs []string, xForwardedFor string) *Client {
+	var client Client
+	var httpClient http.Client
+
+	if len(URIs) == 0 {
+		client.Transport = NewBootstrapFetcher(&httpClient, xForwardedFor, IANABootstrap, nil)
+	} else {
+		client.Transport = NewDefaultFetcher(&httpClient, xForwardedFor)
+	}
+
+	return &client
 }
 
 // Domain will query each RDAP server to retrieve the desired information and

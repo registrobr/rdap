@@ -13,6 +13,18 @@ import (
 	"github.com/registrobr/rdap/protocol"
 )
 
+func TestNewClient(t *testing.T) {
+	client := NewClient([]string{"https://rdap.beta.registro.br"}, "200.160.2.3")
+	if client.Transport == nil {
+		t.Error("Not initializing direct RDAP query tranport layer")
+	}
+
+	client = NewClient(nil, "200.160.2.3")
+	if client.Transport == nil {
+		t.Error("Not initializing bootstrap RDAP tranport layer")
+	}
+}
+
 func TestClientDomain(t *testing.T) {
 	data := []struct {
 		description   string

@@ -7,11 +7,9 @@ import (
 	"net"
 	"net/http"
 	"reflect"
-	"testing"
-
-	"time"
-
 	"strings"
+	"testing"
+	"time"
 
 	"github.com/registrobr/rdap/protocol"
 )

@@ -12,13 +12,28 @@ import (
 	"github.com/registrobr/rdap/protocol"
 )
 
+// List of resource type path segments for exact match lookup as described in
+// RFC 7482, section 3.1
 const (
+	// QueryTypeDomain used to identify reverse DNS (RIR) or domain name (DNR)
+	// information and associated data referenced using a fully qualified domain
+	// name
 	QueryTypeDomain QueryType = "domain"
+
+	// QueryTypeAutnum used to identify Autonomous System number registrations
+	// and associated data referenced using an asplain Autonomous System number
 	QueryTypeAutnum QueryType = "autnum"
-	QueryTypeIP     QueryType = "ip"
+
+	// QueryTypeIP used to identify IP networks and associated data referenced
+	// using either an IPv4 or IPv6 address
+	QueryTypeIP QueryType = "ip"
+
+	// QueryTypeEntity used to identify an entity information query using a
+	// string identifier
 	QueryTypeEntity QueryType = "entity"
 )
 
+// QueryType stores the query type when sending a query to an RDAP server
 type QueryType string
 
 const (
@@ -65,12 +80,20 @@ func newBootstrapQueryType(queryType QueryType, queryValue string) (bootstrapQue
 	return bootstrapQueryTypeNone, false
 }
 
+const (
+	// IANABootstrap stores the default URL to query to retrieve the RDAP
+	// servers that contain the desired information
+	IANABootstrap = "https://data.iana.org/rdap/%s.json"
+)
+
 var (
 	// ErrNotFound is used when the RDAP server doesn't contain any
 	// information of the requested object
 	ErrNotFound = errors.New("not found")
 )
 
+// Fetcher represents the network layer responsible for retrieving the
+// resource information from a RDAP server
 type Fetcher interface {
 	Fetch(uris []string, queryType QueryType, queryValue string) (*http.Response, error)
 }
@@ -78,6 +101,9 @@ type Fetcher interface {
 // fetcherFunc is a function type that implements the Fetcher interface
 type fetcherFunc func([]string, QueryType, string) (*http.Response, error)
 
+// Fetch will try to use the addresses from the uris parameter to send
+// requests using the queryType and queryValue parameters. On success will
+// return a HTTP response, otherwise an error will be returned
 func (f fetcherFunc) Fetch(uris []string, queryType QueryType, queryValue string) (*http.Response, error) {
 	return f(uris, queryType, queryValue)
 }
@@ -92,18 +118,24 @@ func decorate(f Fetcher, ds ...decorator) Fetcher {
 	return f
 }
 
+// CacheDetector is used to define how do you detect if a HTTP response is
+// from cache when performing bootstrap. This depends on the proxy that you
+// are using between the client and the bootstrap server
 type CacheDetector func(*http.Response) bool
 
-type HTTPClient interface {
+type httpClient interface {
 	Do(*http.Request) (*http.Response, error)
 }
 
 type defaultFetcher struct {
-	httpClient    HTTPClient
+	httpClient    httpClient
 	xForwardedFor string
 }
 
-func NewDefaultFetcher(httpClient HTTPClient, xForwardedFor string) Fetcher {
+// NewDefaultFetcher returns a transport layer that send requests directly to
+// the RDAP servers, you can optionally set an HTTP header X-Forwarded-For if
+// your client works as a proxy
+func NewDefaultFetcher(httpClient httpClient, xForwardedFor string) Fetcher {
 	return &defaultFetcher{
 		httpClient:    httpClient,
 		xForwardedFor: xForwardedFor,
@@ -161,14 +193,18 @@ func (d *defaultFetcher) Fetch(uris []string, queryType QueryType, queryValue st
 	return nil, lastErr
 }
 
-func NewBootstrapFetcher(httpClient HTTPClient, xForwardedFor string, bootstrapURI string, cacheDetector CacheDetector) Fetcher {
+// NewBootstrapFetcher returns a transport layer that tries to find the
+// resource in a bootstrap strategy to detect the RDAP servers that can contain
+// the information. After finding the RDAP servers, it will send the requests to
+// retrieve the desired information
+func NewBootstrapFetcher(httpClient httpClient, xForwardedFor string, bootstrapURI string, cacheDetector CacheDetector) Fetcher {
 	return decorate(
 		NewDefaultFetcher(httpClient, xForwardedFor),
 		bootstrap(bootstrapURI, httpClient, cacheDetector),
 	)
 }
 
-func bootstrap(bootstrapURI string, httpClient HTTPClient, cacheDetector CacheDetector) decorator {
+func bootstrap(bootstrapURI string, httpClient httpClient, cacheDetector CacheDetector) decorator {
 	return func(f Fetcher) Fetcher {
 		return fetcherFunc(func(uris []string, queryType QueryType, queryValue string) (*http.Response, error) {
 			bootstrapQueryType, ok := newBootstrapQueryType(queryType, queryValue)
@@ -230,7 +266,7 @@ func bootstrap(bootstrapURI string, httpClient HTTPClient, cacheDetector CacheDe
 	}
 }
 
-func bootstrapFetch(httpClient HTTPClient, uri string, reloadCache bool, cacheDetector CacheDetector) (*serviceRegistry, bool, error) {
+func bootstrapFetch(httpClient httpClient, uri string, reloadCache bool, cacheDetector CacheDetector) (*serviceRegistry, bool, error) {
 	req, err := http.NewRequest("GET", uri, nil)
 	if err != nil {
 		return nil, false, err
