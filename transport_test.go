@@ -213,7 +213,6 @@ func TestBootstrap(t *testing.T) {
 		uris          []string
 		queryType     QueryType
 		queryValue    string
-		xForwardedFor string
 		bootstrapURI  string
 		httpClient    map[string]func(int) (*http.Response, error)
 		lookupNS      func(name string) (nss []*net.NS, err error)
@@ -222,11 +221,10 @@ func TestBootstrap(t *testing.T) {
 		expectedError error
 	}{
 		{
-			description:   "it should retrieve the URL from bootstrap and query the RDAP server correctly (domain)",
-			queryType:     QueryTypeDomain,
-			queryValue:    "example.com",
-			xForwardedFor: "200.160.2.3",
-			bootstrapURI:  "https://data.iana.org/rdap/%s.json",
+			description:  "it should retrieve the URL from bootstrap and query the RDAP server correctly (domain)",
+			queryType:    QueryTypeDomain,
+			queryValue:   "example.com",
+			bootstrapURI: "https://data.iana.org/rdap/%s.json",
 			httpClient: map[string]func(int) (*http.Response, error){
 				"https://data.iana.org/rdap/dns.json": func(executionNumber int) (*http.Response, error) {
 					s := serviceRegistry{
@@ -300,11 +298,10 @@ func TestBootstrap(t *testing.T) {
 			}(),
 		},
 		{
-			description:   "it should retrieve the URL from bootstrap and query the RDAP server correctly (autnum)",
-			queryType:     QueryTypeAutnum,
-			queryValue:    "1234",
-			xForwardedFor: "200.160.2.3",
-			bootstrapURI:  "https://data.iana.org/rdap/%s.json",
+			description:  "it should retrieve the URL from bootstrap and query the RDAP server correctly (autnum)",
+			queryType:    QueryTypeAutnum,
+			queryValue:   "1234",
+			bootstrapURI: "https://data.iana.org/rdap/%s.json",
 			httpClient: map[string]func(int) (*http.Response, error){
 				"https://data.iana.org/rdap/asn.json": func(executionNumber int) (*http.Response, error) {
 					s := serviceRegistry{
@@ -376,11 +373,10 @@ func TestBootstrap(t *testing.T) {
 			}(),
 		},
 		{
-			description:   "it should retrieve the URL from bootstrap and query the RDAP server correctly (ipv4)",
-			queryType:     QueryTypeIP,
-			queryValue:    "200.160.2.3",
-			xForwardedFor: "200.160.2.3",
-			bootstrapURI:  "https://data.iana.org/rdap/%s.json",
+			description:  "it should retrieve the URL from bootstrap and query the RDAP server correctly (ipv4)",
+			queryType:    QueryTypeIP,
+			queryValue:   "200.160.2.3",
+			bootstrapURI: "https://data.iana.org/rdap/%s.json",
 			httpClient: map[string]func(int) (*http.Response, error){
 				"https://data.iana.org/rdap/ipv4.json": func(executionNumber int) (*http.Response, error) {
 					s := serviceRegistry{
@@ -452,11 +448,10 @@ func TestBootstrap(t *testing.T) {
 			}(),
 		},
 		{
-			description:   "it should retrieve the URL from bootstrap and query the RDAP server correctly (ipv6)",
-			queryType:     QueryTypeIP,
-			queryValue:    "2001:12ff:2::3",
-			xForwardedFor: "200.160.2.3",
-			bootstrapURI:  "https://data.iana.org/rdap/%s.json",
+			description:  "it should retrieve the URL from bootstrap and query the RDAP server correctly (ipv6)",
+			queryType:    QueryTypeIP,
+			queryValue:   "2001:12ff:2::3",
+			bootstrapURI: "https://data.iana.org/rdap/%s.json",
 			httpClient: map[string]func(int) (*http.Response, error){
 				"https://data.iana.org/rdap/ipv6.json": func(executionNumber int) (*http.Response, error) {
 					s := serviceRegistry{
@@ -528,11 +523,10 @@ func TestBootstrap(t *testing.T) {
 			}(),
 		},
 		{
-			description:   "it should retrieve the URL from bootstrap and query the RDAP server correctly (ip network v4)",
-			queryType:     QueryTypeIP,
-			queryValue:    "200.160.0.0/20",
-			xForwardedFor: "200.160.2.3",
-			bootstrapURI:  "https://data.iana.org/rdap/%s.json",
+			description:  "it should retrieve the URL from bootstrap and query the RDAP server correctly (ip network v4)",
+			queryType:    QueryTypeIP,
+			queryValue:   "200.160.0.0/20",
+			bootstrapURI: "https://data.iana.org/rdap/%s.json",
 			httpClient: map[string]func(int) (*http.Response, error){
 				"https://data.iana.org/rdap/ipv4.json": func(executionNumber int) (*http.Response, error) {
 					s := serviceRegistry{
@@ -604,11 +598,10 @@ func TestBootstrap(t *testing.T) {
 			}(),
 		},
 		{
-			description:   "it should retrieve the URL from bootstrap and query the RDAP server correctly (ip network v6)",
-			queryType:     QueryTypeIP,
-			queryValue:    "2001:12ff:2::/48",
-			xForwardedFor: "200.160.2.3",
-			bootstrapURI:  "https://data.iana.org/rdap/%s.json",
+			description:  "it should retrieve the URL from bootstrap and query the RDAP server correctly (ip network v6)",
+			queryType:    QueryTypeIP,
+			queryValue:   "2001:12ff:2::/48",
+			bootstrapURI: "https://data.iana.org/rdap/%s.json",
 			httpClient: map[string]func(int) (*http.Response, error){
 				"https://data.iana.org/rdap/ipv6.json": func(executionNumber int) (*http.Response, error) {
 					s := serviceRegistry{
@@ -680,12 +673,11 @@ func TestBootstrap(t *testing.T) {
 			}(),
 		},
 		{
-			description:   "it should ignore entity bootstrap and query the RDAP server directly",
-			uris:          []string{"https://rdap.beta.registro.br"},
-			queryType:     QueryTypeEntity,
-			queryValue:    "h_05506560000136-NICBR",
-			xForwardedFor: "200.160.2.3",
-			bootstrapURI:  "https://data.iana.org/rdap/%s.json",
+			description:  "it should ignore entity bootstrap and query the RDAP server directly",
+			uris:         []string{"https://rdap.beta.registro.br"},
+			queryType:    QueryTypeEntity,
+			queryValue:   "h_05506560000136-NICBR",
+			bootstrapURI: "https://data.iana.org/rdap/%s.json",
 			httpClient: map[string]func(int) (*http.Response, error){
 				"https://rdap.beta.registro.br/entity/h_05506560000136-NICBR": func(executionNumber int) (*http.Response, error) {
 					entity := protocol.Entity{
@@ -731,19 +723,30 @@ func TestBootstrap(t *testing.T) {
 			}(),
 		},
 		{
+			description:  "it should ignore an invalid CIDR in bootstrap and query the RDAP server directly",
+			uris:         []string{"https://rdap.beta.registro.br"},
+			queryType:    QueryTypeIP,
+			queryValue:   "200.160.0.0/XX",
+			bootstrapURI: "https://data.iana.org/rdap/%s.json",
+			httpClient: map[string]func(int) (*http.Response, error){
+				"https://rdap.beta.registro.br/ip/200.160.0.0/XX": func(executionNumber int) (*http.Response, error) {
+					return nil, fmt.Errorf("I'm a crazy error!")
+				},
+			},
+			expectedError: fmt.Errorf("I'm a crazy error!"),
+		},
+		{
 			description:   "it should fail to build the bootstrap request",
 			queryType:     QueryTypeDomain,
 			queryValue:    "example.com",
-			xForwardedFor: "200.160.2.3",
 			bootstrapURI:  "%sabc%",
 			expectedError: fmt.Errorf(`parse dnsabc%%!(NOVERB): invalid URL escape "%%!("`),
 		},
 		{
-			description:   "it should fail to send a bootstrap request",
-			queryType:     QueryTypeDomain,
-			queryValue:    "example.com",
-			xForwardedFor: "200.160.2.3",
-			bootstrapURI:  "https://data.iana.org/rdap/%s.json",
+			description:  "it should fail to send a bootstrap request",
+			queryType:    QueryTypeDomain,
+			queryValue:   "example.com",
+			bootstrapURI: "https://data.iana.org/rdap/%s.json",
 			httpClient: map[string]func(int) (*http.Response, error){
 				"https://data.iana.org/rdap/dns.json": func(executionNumber int) (*http.Response, error) {
 					return nil, fmt.Errorf("I'm a crazy error!")
@@ -752,11 +755,10 @@ func TestBootstrap(t *testing.T) {
 			expectedError: fmt.Errorf("I'm a crazy error!"),
 		},
 		{
-			description:   "it should return an unexpected status from the bootstrap server",
-			queryType:     QueryTypeDomain,
-			queryValue:    "example.com",
-			xForwardedFor: "200.160.2.3",
-			bootstrapURI:  "https://data.iana.org/rdap/%s.json",
+			description:  "it should return an unexpected status from the bootstrap server",
+			queryType:    QueryTypeDomain,
+			queryValue:   "example.com",
+			bootstrapURI: "https://data.iana.org/rdap/%s.json",
 			httpClient: map[string]func(int) (*http.Response, error){
 				"https://data.iana.org/rdap/dns.json": func(executionNumber int) (*http.Response, error) {
 					var response http.Response
@@ -767,11 +769,10 @@ func TestBootstrap(t *testing.T) {
 			expectedError: fmt.Errorf("unexpected status code 500 Internal Server Error"),
 		},
 		{
-			description:   "it should return an invalid response from the bootstrap server",
-			queryType:     QueryTypeDomain,
-			queryValue:    "example.com",
-			xForwardedFor: "200.160.2.3",
-			bootstrapURI:  "https://data.iana.org/rdap/%s.json",
+			description:  "it should return an invalid response from the bootstrap server",
+			queryType:    QueryTypeDomain,
+			queryValue:   "example.com",
+			bootstrapURI: "https://data.iana.org/rdap/%s.json",
 			httpClient: map[string]func(int) (*http.Response, error){
 				"https://data.iana.org/rdap/dns.json": func(executionNumber int) (*http.Response, error) {
 					var response http.Response
@@ -783,11 +784,10 @@ func TestBootstrap(t *testing.T) {
 			expectedError: fmt.Errorf("invalid character '{' looking for beginning of object key string"),
 		},
 		{
-			description:   "it should return an unsupported version from the bootstrap server",
-			queryType:     QueryTypeDomain,
-			queryValue:    "example.com",
-			xForwardedFor: "200.160.2.3",
-			bootstrapURI:  "https://data.iana.org/rdap/%s.json",
+			description:  "it should return an unsupported version from the bootstrap server",
+			queryType:    QueryTypeDomain,
+			queryValue:   "example.com",
+			bootstrapURI: "https://data.iana.org/rdap/%s.json",
 			httpClient: map[string]func(int) (*http.Response, error){
 				"https://data.iana.org/rdap/dns.json": func(executionNumber int) (*http.Response, error) {
 					s := serviceRegistry{
@@ -813,11 +813,10 @@ func TestBootstrap(t *testing.T) {
 			expectedError: fmt.Errorf("incompatible bootstrap specification version: %s (expecting %s)", version+"x", version),
 		},
 		{
-			description:   "it should ignore cache when there's no match for domain",
-			queryType:     QueryTypeDomain,
-			queryValue:    "example.com",
-			xForwardedFor: "200.160.2.3",
-			bootstrapURI:  "https://data.iana.org/rdap/%s.json",
+			description:  "it should ignore cache when there's no match for domain",
+			queryType:    QueryTypeDomain,
+			queryValue:   "example.com",
+			bootstrapURI: "https://data.iana.org/rdap/%s.json",
 			httpClient: map[string]func(int) (*http.Response, error){
 				"https://data.iana.org/rdap/dns.json": func(executionNumber int) (*http.Response, error) {
 					switch executionNumber {
@@ -920,6 +919,76 @@ func TestBootstrap(t *testing.T) {
 				return &response
 			}(),
 		},
+		{
+			description:  "it should report no matchs if the information isn't in the bootstrap response",
+			queryType:    QueryTypeAutnum,
+			queryValue:   "1234",
+			bootstrapURI: "https://data.iana.org/rdap/%s.json",
+			httpClient: map[string]func(int) (*http.Response, error){
+				"https://data.iana.org/rdap/asn.json": func(executionNumber int) (*http.Response, error) {
+					s := serviceRegistry{
+						Version:     version,
+						Publication: time.Now(),
+						Description: "This is a test registry",
+						Services: []service{
+							{
+								[]string{"2000-3000"},
+								[]string{"https://rdap.beta.registro.br"},
+							},
+						},
+					}
+
+					data, err := json.Marshal(s)
+					if err != nil {
+						t.Fatal(err)
+					}
+
+					var response http.Response
+					response.StatusCode = http.StatusOK
+					response.Header = http.Header{
+						"Content-Type": []string{"application/rdap+json"},
+					}
+					response.Body = nopCloser{bytes.NewBuffer(data)}
+					return &response, nil
+				},
+			},
+			expectedError: fmt.Errorf("no matches for 1234"),
+		},
+		{
+			description:  "it should fail to parse an invalid ASN",
+			queryType:    QueryTypeAutnum,
+			queryValue:   "1234x",
+			bootstrapURI: "https://data.iana.org/rdap/%s.json",
+			httpClient: map[string]func(int) (*http.Response, error){
+				"https://data.iana.org/rdap/asn.json": func(executionNumber int) (*http.Response, error) {
+					s := serviceRegistry{
+						Version:     version,
+						Publication: time.Now(),
+						Description: "This is a test registry",
+						Services: []service{
+							{
+								[]string{"1000-2000"},
+								[]string{"https://rdap.beta.registro.br"},
+							},
+						},
+					}
+
+					data, err := json.Marshal(s)
+					if err != nil {
+						t.Fatal(err)
+					}
+
+					var response http.Response
+					response.StatusCode = http.StatusOK
+					response.Header = http.Header{
+						"Content-Type": []string{"application/rdap+json"},
+					}
+					response.Body = nopCloser{bytes.NewBuffer(data)}
+					return &response, nil
+				},
+			},
+			expectedError: fmt.Errorf(`strconv.ParseUint: parsing "1234x": invalid syntax`),
+		},
 	}
 
 	oldLookupNS := lookupNS
@@ -944,7 +1013,7 @@ func TestBootstrap(t *testing.T) {
 			return h(httpCalls)
 		})
 
-		fetcher := NewBootstrapFetcher(httpClient, item.xForwardedFor, item.bootstrapURI, item.cacheDetector)
+		fetcher := NewBootstrapFetcher(httpClient, "", item.bootstrapURI, item.cacheDetector)
 		response, err := fetcher.Fetch(item.uris, item.queryType, item.queryValue)
 
 		if item.expectedError != nil {
