@@ -49,7 +49,7 @@ func TestEntityGetEntity(t *testing.T) {
 		entity, found := e.GetEntity(item.role)
 
 		if found != item.expectedFound {
-			t.Errorf("[%d] %s: expected found “%b”", i, item.description, item.expectedFound)
+			t.Errorf("[%d] %s: expected found “%t”", i, item.description, item.expectedFound)
 		}
 
 		if !reflect.DeepEqual(item.expectedEntity, entity) {

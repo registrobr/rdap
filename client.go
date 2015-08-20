@@ -5,11 +5,16 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"regexp"
 	"strconv"
 	"strings"
 
 	"github.com/registrobr/rdap/Godeps/_workspace/src/github.com/miekg/dns/idn"
 	"github.com/registrobr/rdap/protocol"
+)
+
+var (
+	isFQDN = regexp.MustCompile(`^((([a-z0-9][a-z0-9\-]*[a-z0-9])|[a-z0-9]+)\.)*([a-z]+|xn\-\-[a-z0-9]+)\.?$`)
 )
 
 // Client is responsible for building, sending the request and parsing the
@@ -149,4 +154,27 @@ func (c *Client) IP(ip net.IP, header http.Header) (*protocol.IPNetwork, error) 
 	}
 
 	return ipNetwork, nil
+}
+
+// Query will try to search the object in the following order: ASN, IP, IP
+// network, domain and entity. If the format is not valid for the specific
+// search, the search is ignored
+func (c *Client) Query(object string, header http.Header) (interface{}, error) {
+	if asn, err := strconv.ParseUint(object, 10, 32); err == nil {
+		return c.ASN(uint32(asn), header)
+	}
+
+	if ip := net.ParseIP(object); ip != nil {
+		return c.IP(ip, header)
+	}
+
+	if _, ipnetwork, err := net.ParseCIDR(object); err == nil {
+		return c.IPNetwork(ipnetwork, header)
+	}
+
+	if fqdn := idn.ToPunycode(strings.ToLower(object)); isFQDN.MatchString(fqdn) {
+		return c.Domain(fqdn, header)
+	}
+
+	return c.Entity(object, header)
 }

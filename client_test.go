@@ -138,7 +138,7 @@ func TestClientASN(t *testing.T) {
 		expectedError error
 	}{
 		{
-			description: "it should return a valid entity",
+			description: "it should return a valid AS",
 			asn:         1234,
 			header: http.Header{
 				"X-Forwarded-For": []string{"127.0.0.1"},
@@ -553,10 +553,183 @@ func TestClientIP(t *testing.T) {
 	}
 }
 
+func TestClientQuery(t *testing.T) {
+	data := []struct {
+		description   string
+		object        string
+		header        http.Header
+		client        func() (*http.Response, error)
+		expected      interface{}
+		expectedError error
+	}{
+		{
+			description: "it should return a valid domain",
+			object:      "example.com",
+			header: http.Header{
+				"X-Forwarded-For": []string{"127.0.0.1"},
+			},
+			client: func() (*http.Response, error) {
+				domain := protocol.Domain{
+					ObjectClassName: "domain",
+					Handle:          "example.com",
+					LDHName:         "example.com",
+				}
+
+				data, err := json.Marshal(domain)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				var response http.Response
+				response.Body = nopCloser{bytes.NewBuffer(data)}
+				return &response, nil
+			},
+			expected: &protocol.Domain{
+				ObjectClassName: "domain",
+				Handle:          "example.com",
+				LDHName:         "example.com",
+			},
+		},
+		{
+			description: "it should return a valid AS",
+			object:      "1234",
+			header: http.Header{
+				"X-Forwarded-For": []string{"127.0.0.1"},
+			},
+			client: func() (*http.Response, error) {
+				as := protocol.AS{
+					ObjectClassName: "autnum",
+					Handle:          "1234",
+					StartAutnum:     1234,
+					EndAutnum:       1234,
+				}
+
+				data, err := json.Marshal(as)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				var response http.Response
+				response.Body = nopCloser{bytes.NewBuffer(data)}
+				return &response, nil
+			},
+			expected: &protocol.AS{
+				ObjectClassName: "autnum",
+				Handle:          "1234",
+				StartAutnum:     1234,
+				EndAutnum:       1234,
+			},
+		},
+		{
+			description: "it should return a valid entity",
+			object:      "h_005506560000136-NICBR",
+			header: http.Header{
+				"X-Forwarded-For": []string{"127.0.0.1"},
+			},
+			client: func() (*http.Response, error) {
+				entity := protocol.Entity{
+					ObjectClassName: "entity",
+					Handle:          "005.506.560/0001-36",
+				}
+
+				data, err := json.Marshal(entity)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				var response http.Response
+				response.Body = nopCloser{bytes.NewBuffer(data)}
+				return &response, nil
+			},
+			expected: &protocol.Entity{
+				ObjectClassName: "entity",
+				Handle:          "005.506.560/0001-36",
+			},
+		},
+		{
+			description: "it should return a valid IP network",
+			object:      "200.160.0.0/20",
+			header: http.Header{
+				"X-Forwarded-For": []string{"127.0.0.1"},
+			},
+			client: func() (*http.Response, error) {
+				ipNetwork := protocol.IPNetwork{
+					ObjectClassName: "ipnetwork",
+					Handle:          "200.160.0.0/20",
+				}
+
+				data, err := json.Marshal(ipNetwork)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				var response http.Response
+				response.Body = nopCloser{bytes.NewBuffer(data)}
+				return &response, nil
+			},
+			expected: &protocol.IPNetwork{
+				ObjectClassName: "ipnetwork",
+				Handle:          "200.160.0.0/20",
+			},
+		},
+		{
+			description: "it should return a valid IP network",
+			object:      "200.160.2.3",
+			header: http.Header{
+				"X-Forwarded-For": []string{"127.0.0.1"},
+			},
+			client: func() (*http.Response, error) {
+				ipNetwork := protocol.IPNetwork{
+					ObjectClassName: "ipnetwork",
+					Handle:          "200.160.0.0/20",
+				}
+
+				data, err := json.Marshal(ipNetwork)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				var response http.Response
+				response.Body = nopCloser{bytes.NewBuffer(data)}
+				return &response, nil
+			},
+			expected: &protocol.IPNetwork{
+				ObjectClassName: "ipnetwork",
+				Handle:          "200.160.0.0/20",
+			},
+		},
+	}
+
+	for i, item := range data {
+		client := Client{
+			URIs: []string{"rdap.example.com"},
+			Transport: fetcherFunc(func(uris []string, queryType QueryType, queryValue string, header http.Header) (*http.Response, error) {
+				return item.client()
+			}),
+		}
+
+		resp, err := client.Query(item.object, item.header)
+
+		if item.expectedError != nil {
+			if fmt.Sprintf("%v", item.expectedError) != fmt.Sprintf("%v", err) {
+				t.Errorf("[%d] %s: expected error “%s”, got “%s”", i, item.description, item.expectedError, err)
+			}
+
+		} else if err != nil {
+			t.Errorf("[%d] %s: unexpected error “%s”", i, item.description, err)
+
+		} else {
+			if !reflect.DeepEqual(item.expected, resp) {
+				t.Errorf("[%d] “%s”: mismatch results.\n%v", i, item.description, diff(item.expected, resp))
+			}
+		}
+	}
+}
+
 func ExampleClient() {
 	c := NewClient([]string{"https://rdap.beta.registro.br"})
 
-	d, err := c.Domain("nic.br", nil)
+	d, err := c.Query("nic.br", nil)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -567,9 +740,8 @@ func ExampleClient() {
 
 func ExampleBootstrapClient() {
 	c := NewClient(nil)
-	ip := net.ParseIP("214.1.2.3")
 
-	ipnetwork, err := c.IP(ip, nil)
+	ipnetwork, err := c.Query("214.1.2.3", nil)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -588,9 +760,8 @@ func ExampleAdvancedBootstrapClient() {
 	c := Client{
 		Transport: NewBootstrapFetcher(&httpClient, IANABootstrap, cacheDetector),
 	}
-	ip := net.ParseIP("214.1.2.3")
 
-	ipnetwork, err := c.IP(ip, http.Header{
+	ipnetwork, err := c.Query("214.1.2.3", http.Header{
 		"X-Forwarded-For": []string{"127.0.0.1"},
 	})
 

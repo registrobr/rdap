@@ -31,21 +31,20 @@ package main
 
 import (
 	"fmt"
-	"net"
 
 	"github.com/registrobr/rdap"
 )
 
 func main() {
-  c := rdap.NewClient([]string{"https://rdap.beta.registro.br"})
+	c := rdap.NewClient([]string{"https://rdap.beta.registro.br"})
 
-  d, err := c.Domain("nic.br", nil)
-  if err != nil {
-    fmt.Println(err)
-    return
-  }
+	d, err := c.Query("nic.br", nil)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
 
-  fmt.Printf("%#v", d)
+	fmt.Printf("%#v", d)
 }
 ```
 
@@ -56,16 +55,14 @@ package main
 
 import (
 	"fmt"
-	"net"
 
 	"github.com/registrobr/rdap"
 )
 
 func main() {
 	c := rdap.NewClient(nil)
-	ip := net.ParseIP("214.1.2.3")
 
-	ipnetwork, err := c.IP(ip, nil)
+	ipnetwork, err := c.Query("214.1.2.3", nil)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -83,7 +80,6 @@ package main
 
 import (
 	"fmt"
-	"net"
 	"net/http"
 
 	"github.com/registrobr/rdap"
@@ -96,12 +92,11 @@ func main() {
 		return resp.Header.Get("X-From-Cache") == "1"
 	})
 
-	c := Client{
+	c := rdap.Client{
 		Transport: rdap.NewBootstrapFetcher(&httpClient, rdap.IANABootstrap, cacheDetector),
 	}
-	ip := net.ParseIP("214.1.2.3")
 
-	ipnetwork, err := c.IP(ip, http.Header{
+	ipnetwork, err := c.Query("214.1.2.3", http.Header{
 		"X-Forwarded-For": []string{"127.0.0.1"},
 	})
 
