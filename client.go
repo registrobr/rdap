@@ -27,9 +27,8 @@ type Client struct {
 }
 
 // NewClient is an easy way to create a client with bootstrap support or not,
-// depending if you inform direct RDAP addresses. Optionally you can define
-// an X-Fowarded-For HTTP header to work as a proxy client
-func NewClient(URIs []string, xForwardedFor string) *Client {
+// depending if you inform direct RDAP addresses
+func NewClient(URIs []string) *Client {
 	client := Client{
 		URIs: URIs,
 	}
@@ -37,22 +36,23 @@ func NewClient(URIs []string, xForwardedFor string) *Client {
 	var httpClient http.Client
 
 	if len(URIs) == 0 {
-		client.Transport = NewBootstrapFetcher(&httpClient, xForwardedFor, IANABootstrap, nil)
+		client.Transport = NewBootstrapFetcher(&httpClient, IANABootstrap, nil)
 	} else {
-		client.Transport = NewDefaultFetcher(&httpClient, xForwardedFor)
+		client.Transport = NewDefaultFetcher(&httpClient)
 	}
 
 	return &client
 }
 
 // Domain will query each RDAP server to retrieve the desired information and
-// will parse and store the response into a protocol Domain object. If
+// will parse and store the response into a protocol Domain object. You can
+// optionally define the HTTP headers parameters to send to the RDAP server. If
 // something goes wrong an error will be returned, and if nothing is found
 // the error ErrNotFound will be returned
-func (c *Client) Domain(fqdn string) (*protocol.Domain, error) {
+func (c *Client) Domain(fqdn string, header http.Header) (*protocol.Domain, error) {
 	fqdn = idn.ToPunycode(strings.ToLower(fqdn))
 
-	resp, err := c.Transport.Fetch(c.URIs, QueryTypeDomain, fqdn)
+	resp, err := c.Transport.Fetch(c.URIs, QueryTypeDomain, fqdn, header)
 	if err != nil {
 		return nil, err
 	}
@@ -66,11 +66,14 @@ func (c *Client) Domain(fqdn string) (*protocol.Domain, error) {
 }
 
 // ASN will query each RDAP server to retrieve the desired information and
-// will parse and store the response into a protocol AS object. If
-// something goes wrong an error will be returned, and if nothing is found
+// will parse and store the response into a protocol AS object. You can
+// optionally define the HTTP headers parameters to send to the RDAP server.
+// If something goes wrong an error will be returned, and if nothing is found
 // the error ErrNotFound will be returned
-func (c *Client) ASN(asn uint32) (*protocol.AS, error) {
-	resp, err := c.Transport.Fetch(c.URIs, QueryTypeAutnum, strconv.FormatUint(uint64(asn), 10))
+func (c *Client) ASN(asn uint32, header http.Header) (*protocol.AS, error) {
+	asnStr := strconv.FormatUint(uint64(asn), 10)
+
+	resp, err := c.Transport.Fetch(c.URIs, QueryTypeAutnum, asnStr, header)
 	if err != nil {
 		return nil, err
 	}
@@ -84,11 +87,12 @@ func (c *Client) ASN(asn uint32) (*protocol.AS, error) {
 }
 
 // Entity will query each RDAP server to retrieve the desired information and
-// will parse and store the response into a protocol Entity object. If
-// something goes wrong an error will be returned, and if nothing is found
+// will parse and store the response into a protocol Entity object. You can
+// optionally define the HTTP headers parameters to send to the RDAP server.
+// If something goes wrong an error will be returned, and if nothing is found
 // the error ErrNotFound will be returned
-func (c *Client) Entity(identifier string) (*protocol.Entity, error) {
-	resp, err := c.Transport.Fetch(c.URIs, QueryTypeEntity, identifier)
+func (c *Client) Entity(identifier string, header http.Header) (*protocol.Entity, error) {
+	resp, err := c.Transport.Fetch(c.URIs, QueryTypeEntity, identifier, header)
 	if err != nil {
 		return nil, err
 	}
@@ -102,15 +106,16 @@ func (c *Client) Entity(identifier string) (*protocol.Entity, error) {
 }
 
 // IPNetwork will query each RDAP server to retrieve the desired information and
-// will parse and store the response into a protocol IPNetwork object. If
-// something goes wrong an error will be returned, and if nothing is found
+// will parse and store the response into a protocol IPNetwork object. You can
+// optionally define the HTTP headers parameters to send to the RDAP server.
+// If something goes wrong an error will be returned, and if nothing is found
 // the error ErrNotFound will be returned
-func (c *Client) IPNetwork(ipnet *net.IPNet) (*protocol.IPNetwork, error) {
+func (c *Client) IPNetwork(ipnet *net.IPNet, header http.Header) (*protocol.IPNetwork, error) {
 	if ipnet == nil {
 		return nil, fmt.Errorf("undefined IP network")
 	}
 
-	resp, err := c.Transport.Fetch(c.URIs, QueryTypeIP, ipnet.String())
+	resp, err := c.Transport.Fetch(c.URIs, QueryTypeIP, ipnet.String(), header)
 	if err != nil {
 		return nil, err
 	}
@@ -124,15 +129,16 @@ func (c *Client) IPNetwork(ipnet *net.IPNet) (*protocol.IPNetwork, error) {
 }
 
 // IP will query each RDAP server to retrieve the desired information and
-// will parse and store the response into a protocol IP object. If
-// something goes wrong an error will be returned, and if nothing is found
+// will parse and store the response into a protocol IP object. You can
+// optionally define the HTTP headers parameters to send to the RDAP server.
+// If something goes wrong an error will be returned, and if nothing is found
 // the error ErrNotFound will be returned
-func (c *Client) IP(ip net.IP) (*protocol.IPNetwork, error) {
+func (c *Client) IP(ip net.IP, header http.Header) (*protocol.IPNetwork, error) {
 	if ip == nil {
 		return nil, fmt.Errorf("undefined IP")
 	}
 
-	resp, err := c.Transport.Fetch(c.URIs, QueryTypeIP, ip.String())
+	resp, err := c.Transport.Fetch(c.URIs, QueryTypeIP, ip.String(), header)
 	if err != nil {
 		return nil, err
 	}

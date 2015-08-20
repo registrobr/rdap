@@ -96,17 +96,18 @@ var (
 // Fetcher represents the network layer responsible for retrieving the
 // resource information from a RDAP server
 type Fetcher interface {
-	Fetch(uris []string, queryType QueryType, queryValue string) (*http.Response, error)
+	Fetch(uris []string, queryType QueryType, queryValue string, header http.Header) (*http.Response, error)
 }
 
 // fetcherFunc is a function type that implements the Fetcher interface
-type fetcherFunc func([]string, QueryType, string) (*http.Response, error)
+type fetcherFunc func([]string, QueryType, string, http.Header) (*http.Response, error)
 
 // Fetch will try to use the addresses from the uris parameter to send
-// requests using the queryType and queryValue parameters. On success will
-// return a HTTP response, otherwise an error will be returned
-func (f fetcherFunc) Fetch(uris []string, queryType QueryType, queryValue string) (*http.Response, error) {
-	return f(uris, queryType, queryValue)
+// requests using the queryType and queryValue parameters. You can optionally
+// set HTTP headers (like X-Forwarded-For) for the RDAP server request. On
+// success will return a HTTP response, otherwise an error will be returned
+func (f fetcherFunc) Fetch(uris []string, queryType QueryType, queryValue string, header http.Header) (*http.Response, error) {
+	return f(uris, queryType, queryValue, header)
 }
 
 type decorator func(Fetcher) Fetcher
@@ -129,21 +130,18 @@ type httpClient interface {
 }
 
 type defaultFetcher struct {
-	httpClient    httpClient
-	xForwardedFor string
+	httpClient httpClient
 }
 
 // NewDefaultFetcher returns a transport layer that send requests directly to
-// the RDAP servers, you can optionally set an HTTP header X-Forwarded-For if
-// your client works as a proxy
-func NewDefaultFetcher(httpClient httpClient, xForwardedFor string) Fetcher {
+// the RDAP servers
+func NewDefaultFetcher(httpClient httpClient) Fetcher {
 	return &defaultFetcher{
-		httpClient:    httpClient,
-		xForwardedFor: xForwardedFor,
+		httpClient: httpClient,
 	}
 }
 
-func (d *defaultFetcher) Fetch(uris []string, queryType QueryType, queryValue string) (*http.Response, error) {
+func (d *defaultFetcher) Fetch(uris []string, queryType QueryType, queryValue string, header http.Header) (*http.Response, error) {
 	var lastErr error
 
 	for _, uri := range uris {
@@ -154,11 +152,12 @@ func (d *defaultFetcher) Fetch(uris []string, queryType QueryType, queryValue st
 			lastErr = err
 			continue
 		}
-		req.Header.Add("Accept", "application/rdap+json")
 
-		if d.xForwardedFor != "" {
-			req.Header.Add("X-Forwarded-For", d.xForwardedFor)
+		if header != nil {
+			req.Header = header
 		}
+
+		req.Header.Set("Accept", "application/rdap+json")
 
 		resp, err := d.httpClient.Do(req)
 		if err != nil {
@@ -201,21 +200,21 @@ func (d *defaultFetcher) Fetch(uris []string, queryType QueryType, queryValue st
 // resource in a bootstrap strategy to detect the RDAP servers that can contain
 // the information. After finding the RDAP servers, it will send the requests to
 // retrieve the desired information
-func NewBootstrapFetcher(httpClient httpClient, xForwardedFor string, bootstrapURI string, cacheDetector CacheDetector) Fetcher {
+func NewBootstrapFetcher(httpClient httpClient, bootstrapURI string, cacheDetector CacheDetector) Fetcher {
 	return decorate(
-		NewDefaultFetcher(httpClient, xForwardedFor),
+		NewDefaultFetcher(httpClient),
 		bootstrap(bootstrapURI, httpClient, cacheDetector),
 	)
 }
 
 func bootstrap(bootstrapURI string, httpClient httpClient, cacheDetector CacheDetector) decorator {
 	return func(f Fetcher) Fetcher {
-		return fetcherFunc(func(uris []string, queryType QueryType, queryValue string) (*http.Response, error) {
+		return fetcherFunc(func(uris []string, queryType QueryType, queryValue string, header http.Header) (*http.Response, error) {
 			bootstrapQueryType, ok := newBootstrapQueryType(queryType, queryValue)
 			if !ok {
 				// if we can't convert the queryType the resource is probably not
 				// supported by the bootstrap
-				return f.Fetch(uris, queryType, queryValue)
+				return f.Fetch(uris, queryType, queryValue, header)
 			}
 			bootstrapURI := fmt.Sprintf(bootstrapURI, bootstrapQueryType)
 
@@ -265,7 +264,7 @@ func bootstrap(bootstrapURI string, httpClient httpClient, cacheDetector CacheDe
 			}
 
 			sort.Sort(prioritizeHTTPS(uris))
-			return f.Fetch(uris, queryType, queryValue)
+			return f.Fetch(uris, queryType, queryValue, header)
 		})
 	}
 }

@@ -26,17 +26,19 @@ func TestDefaultFetcherFetch(t *testing.T) {
 		uris          []string
 		queryType     QueryType
 		queryValue    string
-		xForwardedFor string
+		header        http.Header
 		httpClient    func() (*http.Response, error)
 		expected      *http.Response
 		expectedError error
 	}{
 		{
-			description:   "it should fetch correctly",
-			uris:          []string{"https://rdap.beta.registro.br"},
-			queryType:     QueryTypeDomain,
-			queryValue:    "example.com",
-			xForwardedFor: "200.160.2.3",
+			description: "it should fetch correctly",
+			uris:        []string{"https://rdap.beta.registro.br"},
+			queryType:   QueryTypeDomain,
+			queryValue:  "example.com",
+			header: http.Header{
+				"X-Forwarded-For": []string{"200.160.2.3"},
+			},
 			httpClient: func() (*http.Response, error) {
 				domain := protocol.Domain{
 					ObjectClassName: "domain",
@@ -86,22 +88,26 @@ func TestDefaultFetcherFetch(t *testing.T) {
 			expectedError: fmt.Errorf(`parse abc%%/domain/example.com: invalid URL escape "%%/d"`),
 		},
 		{
-			description:   "it should fail while sending the HTTP request",
-			uris:          []string{"https://rdap.beta.registro.br"},
-			queryType:     QueryTypeDomain,
-			queryValue:    "example.com",
-			xForwardedFor: "200.160.2.3",
+			description: "it should fail while sending the HTTP request",
+			uris:        []string{"https://rdap.beta.registro.br"},
+			queryType:   QueryTypeDomain,
+			queryValue:  "example.com",
+			header: http.Header{
+				"X-Forwarded-For": []string{"200.160.2.3"},
+			},
 			httpClient: func() (*http.Response, error) {
 				return nil, fmt.Errorf("I'm a crazy error!")
 			},
 			expectedError: fmt.Errorf("I'm a crazy error!"),
 		},
 		{
-			description:   "it should store the last error (not found)",
-			uris:          []string{"abc%", "https://rdap.beta.registro.br"},
-			queryType:     QueryTypeDomain,
-			queryValue:    "example.com",
-			xForwardedFor: "200.160.2.3",
+			description: "it should store the last error (not found)",
+			uris:        []string{"abc%", "https://rdap.beta.registro.br"},
+			queryType:   QueryTypeDomain,
+			queryValue:  "example.com",
+			header: http.Header{
+				"X-Forwarded-For": []string{"200.160.2.3"},
+			},
 			httpClient: func() (*http.Response, error) {
 				var response http.Response
 				response.StatusCode = http.StatusNotFound
@@ -110,11 +116,13 @@ func TestDefaultFetcherFetch(t *testing.T) {
 			expectedError: ErrNotFound,
 		},
 		{
-			description:   "it should fail when content-type isn't “application/rdap+json”",
-			uris:          []string{"https://rdap.beta.registro.br"},
-			queryType:     QueryTypeDomain,
-			queryValue:    "example.com",
-			xForwardedFor: "200.160.2.3",
+			description: "it should fail when content-type isn't “application/rdap+json”",
+			uris:        []string{"https://rdap.beta.registro.br"},
+			queryType:   QueryTypeDomain,
+			queryValue:  "example.com",
+			header: http.Header{
+				"X-Forwarded-For": []string{"200.160.2.3"},
+			},
 			httpClient: func() (*http.Response, error) {
 				var response http.Response
 				response.StatusCode = http.StatusOK
@@ -126,11 +134,13 @@ func TestDefaultFetcherFetch(t *testing.T) {
 			expectedError: fmt.Errorf("unexpected response: 200 OK"),
 		},
 		{
-			description:   "it should parse an error response correctly",
-			uris:          []string{"https://rdap.beta.registro.br"},
-			queryType:     QueryTypeDomain,
-			queryValue:    "example.com",
-			xForwardedFor: "200.160.2.3",
+			description: "it should parse an error response correctly",
+			uris:        []string{"https://rdap.beta.registro.br"},
+			queryType:   QueryTypeDomain,
+			queryValue:  "example.com",
+			header: http.Header{
+				"X-Forwarded-For": []string{"200.160.2.3"},
+			},
 			httpClient: func() (*http.Response, error) {
 				e := protocol.Error{
 					ErrorCode: 400,
@@ -154,11 +164,13 @@ func TestDefaultFetcherFetch(t *testing.T) {
 			},
 		},
 		{
-			description:   "it should fail to parse an invalid error response",
-			uris:          []string{"https://rdap.beta.registro.br"},
-			queryType:     QueryTypeDomain,
-			queryValue:    "example.com",
-			xForwardedFor: "200.160.2.3",
+			description: "it should fail to parse an invalid error response",
+			uris:        []string{"https://rdap.beta.registro.br"},
+			queryType:   QueryTypeDomain,
+			queryValue:  "example.com",
+			header: http.Header{
+				"X-Forwarded-For": []string{"200.160.2.3"},
+			},
 			httpClient: func() (*http.Response, error) {
 				var response http.Response
 				response.StatusCode = http.StatusBadRequest
@@ -179,15 +191,22 @@ func TestDefaultFetcherFetch(t *testing.T) {
 				return nil, fmt.Errorf("expected url “%s” and got “%s”", expectedURL, r.URL.Path)
 			}
 
-			if r.Header.Get("X-Forwarded-For") != item.xForwardedFor {
-				return nil, fmt.Errorf("expected HTTP header X-Forwarded-For “%s” and got “%s”", item.xForwardedFor, r.Header.Get("X-Forwarded-For"))
+			for key, values := range item.header {
+				var value string
+				if len(values) > 0 {
+					value = values[0]
+				}
+
+				if r.Header.Get(key) != value {
+					return nil, fmt.Errorf("expected HTTP header %s to be “%s” and got “%s”", key, value, r.Header.Get(key))
+				}
 			}
 
 			return item.httpClient()
 		})
 
-		fetcher := NewDefaultFetcher(httpClient, item.xForwardedFor)
-		response, err := fetcher.Fetch(item.uris, item.queryType, item.queryValue)
+		fetcher := NewDefaultFetcher(httpClient)
+		response, err := fetcher.Fetch(item.uris, item.queryType, item.queryValue, item.header)
 
 		if item.expectedError != nil {
 			if fmt.Sprintf("%v", item.expectedError) != fmt.Sprintf("%v", err) {
@@ -1011,8 +1030,8 @@ func TestBootstrap(t *testing.T) {
 			return h(httpCalls)
 		})
 
-		fetcher := NewBootstrapFetcher(httpClient, "", item.bootstrapURI, item.cacheDetector)
-		response, err := fetcher.Fetch(item.uris, item.queryType, item.queryValue)
+		fetcher := NewBootstrapFetcher(httpClient, item.bootstrapURI, item.cacheDetector)
+		response, err := fetcher.Fetch(item.uris, item.queryType, item.queryValue, nil)
 
 		if item.expectedError != nil {
 			if fmt.Sprintf("%v", item.expectedError) != fmt.Sprintf("%v", err) {
