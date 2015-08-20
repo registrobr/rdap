@@ -37,7 +37,7 @@ import (
 )
 
 func main() {
-	c := NewClient([]string{"https://rdap.beta.registro.br"}, "")
+  c := rdap.NewClient([]string{"https://rdap.beta.registro.br"}, "")
 
   d, err := c.Domain("nic.br")
   if err != nil {
