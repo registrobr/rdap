@@ -537,3 +537,24 @@ func ExampleBootstrapClient() {
 
 	fmt.Printf("%#v", ipnetwork)
 }
+
+func ExampleAdvancedBootstrapClient() {
+	var httpClient http.Client
+
+	cacheDetector := CacheDetector(func(resp *http.Response) bool {
+		return resp.Header.Get("X-From-Cache") == "1"
+	})
+
+	c := Client{
+		Transport: NewBootstrapFetcher(&httpClient, "", IANABootstrap, cacheDetector),
+	}
+	ip := net.ParseIP("214.1.2.3")
+
+	ipnetwork, err := c.IP(ip)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	fmt.Printf("%#v", ipnetwork)
+}
