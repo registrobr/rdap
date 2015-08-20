@@ -52,7 +52,7 @@ func TestDefaultFetcherFetch(t *testing.T) {
 				var response http.Response
 				response.StatusCode = http.StatusOK
 				response.Header = http.Header{
-					"Content-Type": []string{"application/rdap+json"},
+					"Content-Type": []string{"application/rdap+json; charset=utf-8"},
 				}
 				response.Body = nopCloser{bytes.NewBuffer(data)}
 				return &response, nil
@@ -72,7 +72,7 @@ func TestDefaultFetcherFetch(t *testing.T) {
 				var response http.Response
 				response.StatusCode = http.StatusOK
 				response.Header = http.Header{
-					"Content-Type": []string{"application/rdap+json"},
+					"Content-Type": []string{"application/rdap+json; charset=utf-8"},
 				}
 				response.Body = nopCloser{bytes.NewBuffer(data)}
 				return &response

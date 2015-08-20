@@ -18,6 +18,9 @@ func TestNewClient(t *testing.T) {
 	if client.Transport == nil {
 		t.Error("Not initializing direct RDAP query tranport layer")
 	}
+	if !reflect.DeepEqual(client.URIs, []string{"https://rdap.beta.registro.br"}) {
+		t.Error("Not setting the URIs")
+	}
 
 	client = NewClient(nil, "200.160.2.3")
 	if client.Transport == nil {
@@ -508,4 +511,29 @@ func TestClientIP(t *testing.T) {
 			}
 		}
 	}
+}
+
+func ExampleClient() {
+	c := NewClient([]string{"https://rdap.beta.registro.br"}, "")
+
+	d, err := c.Domain("nic.br")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	fmt.Printf("%#v", d)
+}
+
+func ExampleBootstrapClient() {
+	c := NewClient(nil, "")
+	ip := net.ParseIP("214.1.2.3")
+
+	ipnetwork, err := c.IP(ip)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	fmt.Printf("%#v", ipnetwork)
 }

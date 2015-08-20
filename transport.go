@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"sort"
 	"strconv"
+	"strings"
 
 	"github.com/registrobr/rdap/protocol"
 )
@@ -153,7 +154,7 @@ func (d *defaultFetcher) Fetch(uris []string, queryType QueryType, queryValue st
 			lastErr = err
 			continue
 		}
-		req.Header.Add("Accept", "application/json")
+		req.Header.Add("Accept", "application/rdap+json")
 
 		if d.xForwardedFor != "" {
 			req.Header.Add("X-Forwarded-For", d.xForwardedFor)
@@ -170,7 +171,10 @@ func (d *defaultFetcher) Fetch(uris []string, queryType QueryType, queryValue st
 			continue
 		}
 
-		if resp.Header.Get("Content-Type") != "application/rdap+json" {
+		contentType := resp.Header.Get("Content-Type")
+		contentTypeParts := strings.Split(contentType, ";")
+
+		if len(contentTypeParts) == 0 || contentTypeParts[0] != "application/rdap+json" {
 			lastErr = fmt.Errorf("unexpected response: %d %s",
 				resp.StatusCode, http.StatusText(resp.StatusCode))
 			continue

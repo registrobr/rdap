@@ -30,7 +30,10 @@ type Client struct {
 // depending if you inform direct RDAP addresses. Optionally you can define
 // an X-Fowarded-For HTTP header to work as a proxy client
 func NewClient(URIs []string, xForwardedFor string) *Client {
-	var client Client
+	client := Client{
+		URIs: URIs,
+	}
+
 	var httpClient http.Client
 
 	if len(URIs) == 0 {
