@@ -161,22 +161,22 @@ func (c *Client) IP(ip net.IP, header http.Header, queryString url.Values) (*pro
 // Query will try to search the object in the following order: ASN, IP, IP
 // network, domain and entity. If the format is not valid for the specific
 // search, the search is ignored
-func (c *Client) Query(object string, header http.Header) (interface{}, error) {
+func (c *Client) Query(object string, header http.Header, queryString url.Values) (interface{}, error) {
 	if asn, err := strconv.ParseUint(object, 10, 32); err == nil {
-		return c.ASN(uint32(asn), header, nil)
+		return c.ASN(uint32(asn), header, queryString)
 	}
 
 	if ip := net.ParseIP(object); ip != nil {
-		return c.IP(ip, header, nil)
+		return c.IP(ip, header, queryString)
 	}
 
 	if _, ipnetwork, err := net.ParseCIDR(object); err == nil {
-		return c.IPNetwork(ipnetwork, header, nil)
+		return c.IPNetwork(ipnetwork, header, queryString)
 	}
 
 	if fqdn := idn.ToPunycode(strings.ToLower(object)); isFQDN.MatchString(fqdn) {
-		return c.Domain(fqdn, header, nil)
+		return c.Domain(fqdn, header, queryString)
 	}
 
-	return c.Entity(object, header, nil)
+	return c.Entity(object, header, queryString)
 }

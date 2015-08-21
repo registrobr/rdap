@@ -35,7 +35,7 @@ func TestDefaultFetcherFetch(t *testing.T) {
 	}{
 		{
 			description: "it should fetch correctly",
-			uris:        []string{"rdap.beta.registro.br////"},
+			uris:        []string{"rdap.beta.registro.br////?key1=value1"},
 			queryType:   QueryTypeDomain,
 			queryValue:  "example.com",
 			header: http.Header{

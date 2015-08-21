@@ -154,6 +154,10 @@ func (d *defaultFetcher) Fetch(uris []string, queryType QueryType, queryValue st
 			uri = "http://" + uri
 		}
 
+		if pos := strings.Index(uri, "?"); pos != -1 {
+			uri = uri[:pos]
+		}
+
 		uri = strings.TrimRight(uri, "/")
 		uri = fmt.Sprintf("%s/%s/%s", uri, queryType, queryValue)
 

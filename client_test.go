@@ -599,6 +599,7 @@ func TestClientQuery(t *testing.T) {
 		description   string
 		object        string
 		header        http.Header
+		queryString   url.Values
 		client        func() (*http.Response, error)
 		expected      interface{}
 		expectedError error
@@ -608,6 +609,9 @@ func TestClientQuery(t *testing.T) {
 			object:      "example.com",
 			header: http.Header{
 				"X-Forwarded-For": []string{"127.0.0.1"},
+			},
+			queryString: url.Values{
+				"ticket": []string{"1234"},
 			},
 			client: func() (*http.Response, error) {
 				domain := protocol.Domain{
@@ -749,7 +753,7 @@ func TestClientQuery(t *testing.T) {
 			}),
 		}
 
-		resp, err := client.Query(item.object, item.header)
+		resp, err := client.Query(item.object, item.header, item.queryString)
 
 		if item.expectedError != nil {
 			if fmt.Sprintf("%v", item.expectedError) != fmt.Sprintf("%v", err) {
@@ -770,7 +774,7 @@ func TestClientQuery(t *testing.T) {
 func ExampleClient() {
 	c := NewClient([]string{"https://rdap.beta.registro.br"})
 
-	d, err := c.Query("nic.br", nil)
+	d, err := c.Query("nic.br", nil, nil)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -807,7 +811,7 @@ func ExampleClient() {
 func ExampleBootstrapClient() {
 	c := NewClient(nil)
 
-	ipnetwork, err := c.Query("214.1.2.3", nil)
+	ipnetwork, err := c.Query("214.1.2.3", nil, nil)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -835,7 +839,7 @@ func ExampleAdvancedBootstrapClient() {
 
 	ipnetwork, err := c.Query("214.1.2.3", http.Header{
 		"X-Forwarded-For": []string{"127.0.0.1"},
-	})
+	}, nil)
 
 	if err != nil {
 		fmt.Println(err)

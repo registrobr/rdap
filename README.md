@@ -40,7 +40,7 @@ import (
 func main() {
 	c := rdap.NewClient([]string{"https://rdap.beta.registro.br"})
 
-	d, err := c.Query("nic.br", nil)
+	d, err := c.Query("nic.br", nil, nil)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -90,7 +90,7 @@ import (
 func main() {
 	c := rdap.NewClient(nil)
 
-	ipnetwork, err := c.Query("214.1.2.3", nil)
+	ipnetwork, err := c.Query("214.1.2.3", nil, nil)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -133,7 +133,7 @@ func main() {
 
 	ipnetwork, err := c.Query("214.1.2.3", http.Header{
 		"X-Forwarded-For": []string{"127.0.0.1"},
-	})
+	}, nil)
 
 	if err != nil {
 		fmt.Println(err)
