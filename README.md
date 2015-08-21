@@ -30,7 +30,9 @@ And build a program like bellow for direct RDAP server requests:
 package main
 
 import (
+	"encoding/json"
 	"fmt"
+	"url"
 
 	"github.com/registrobr/rdap"
 )
@@ -44,7 +46,32 @@ func main() {
 		return
 	}
 
-	fmt.Printf("%#v", d)
+	output, err := json.MarshalIndent(d, "", "  ")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	fmt.Println(string(output))
+
+	// Another example for a direct domain query adding a "ticket" parameter
+
+	queryString := make(url.Values)
+	queryString.Set("ticket", "5439886")
+
+	d, err = c.Domain("rafael.net.br", nil, queryString)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	output, err = json.MarshalIndent(d, "", "  ")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	fmt.Println(string(output))
 }
 ```
 
@@ -54,6 +81,7 @@ You can also try with bootstrap support:
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/registrobr/rdap"
@@ -68,7 +96,13 @@ func main() {
 		return
 	}
 
-	fmt.Printf("%#v", ipnetwork)
+	output, err := json.MarshalIndent(ipnetwork, "", "  ")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	fmt.Println(string(output))
 }
 ```
 
@@ -79,6 +113,7 @@ layer:
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 
@@ -105,7 +140,13 @@ func main() {
 		return
 	}
 
-	fmt.Printf("%#v", ipnetwork)
+	output, err := json.MarshalIndent(ipnetwork, "", "  ")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	fmt.Println(string(output))
 }
 ```
 

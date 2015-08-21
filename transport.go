@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"net/url"
 	"sort"
 	"strconv"
 	"strings"
@@ -96,18 +97,18 @@ var (
 // Fetcher represents the network layer responsible for retrieving the
 // resource information from a RDAP server
 type Fetcher interface {
-	Fetch(uris []string, queryType QueryType, queryValue string, header http.Header) (*http.Response, error)
+	Fetch(uris []string, queryType QueryType, queryValue string, header http.Header, queryString url.Values) (*http.Response, error)
 }
 
 // fetcherFunc is a function type that implements the Fetcher interface
-type fetcherFunc func([]string, QueryType, string, http.Header) (*http.Response, error)
+type fetcherFunc func([]string, QueryType, string, http.Header, url.Values) (*http.Response, error)
 
 // Fetch will try to use the addresses from the uris parameter to send
 // requests using the queryType and queryValue parameters. You can optionally
 // set HTTP headers (like X-Forwarded-For) for the RDAP server request. On
 // success will return a HTTP response, otherwise an error will be returned
-func (f fetcherFunc) Fetch(uris []string, queryType QueryType, queryValue string, header http.Header) (*http.Response, error) {
-	return f(uris, queryType, queryValue, header)
+func (f fetcherFunc) Fetch(uris []string, queryType QueryType, queryValue string, header http.Header, queryString url.Values) (*http.Response, error) {
+	return f(uris, queryType, queryValue, header, queryString)
 }
 
 type decorator func(Fetcher) Fetcher
@@ -141,7 +142,7 @@ func NewDefaultFetcher(httpClient httpClient) Fetcher {
 	}
 }
 
-func (d *defaultFetcher) Fetch(uris []string, queryType QueryType, queryValue string, header http.Header) (*http.Response, error) {
+func (d *defaultFetcher) Fetch(uris []string, queryType QueryType, queryValue string, header http.Header, queryString url.Values) (*http.Response, error) {
 	var lastErr error
 
 	if len(uris) == 0 {
@@ -150,6 +151,9 @@ func (d *defaultFetcher) Fetch(uris []string, queryType QueryType, queryValue st
 
 	for _, uri := range uris {
 		uri = fmt.Sprintf("%s/%s/%s", uri, queryType, queryValue)
+		if q := queryString.Encode(); len(q) > 0 {
+			uri += "?" + q
+		}
 
 		req, err := http.NewRequest("GET", uri, nil)
 		if err != nil {
@@ -213,12 +217,12 @@ func NewBootstrapFetcher(httpClient httpClient, bootstrapURI string, cacheDetect
 
 func bootstrap(bootstrapURI string, httpClient httpClient, cacheDetector CacheDetector) decorator {
 	return func(f Fetcher) Fetcher {
-		return fetcherFunc(func(uris []string, queryType QueryType, queryValue string, header http.Header) (*http.Response, error) {
+		return fetcherFunc(func(uris []string, queryType QueryType, queryValue string, header http.Header, queryString url.Values) (*http.Response, error) {
 			bootstrapQueryType, ok := newBootstrapQueryType(queryType, queryValue)
 			if !ok {
 				// if we can't convert the queryType the resource is probably not
 				// supported by the bootstrap
-				return f.Fetch(uris, queryType, queryValue, header)
+				return f.Fetch(uris, queryType, queryValue, header, queryString)
 			}
 			bootstrapURI := fmt.Sprintf(bootstrapURI, bootstrapQueryType)
 
@@ -268,7 +272,7 @@ func bootstrap(bootstrapURI string, httpClient httpClient, cacheDetector CacheDe
 			}
 
 			sort.Sort(prioritizeHTTPS(uris))
-			return f.Fetch(uris, queryType, queryValue, header)
+			return f.Fetch(uris, queryType, queryValue, header, queryString)
 		})
 	}
 }
