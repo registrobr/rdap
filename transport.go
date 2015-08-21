@@ -150,7 +150,13 @@ func (d *defaultFetcher) Fetch(uris []string, queryType QueryType, queryValue st
 	}
 
 	for _, uri := range uris {
+		if !strings.HasPrefix(uri, "http://") && !strings.HasPrefix(uri, "https://") {
+			uri = "http://" + uri
+		}
+
+		uri = strings.TrimRight(uri, "/")
 		uri = fmt.Sprintf("%s/%s/%s", uri, queryType, queryValue)
+
 		if q := queryString.Encode(); len(q) > 0 {
 			uri += "?" + q
 		}

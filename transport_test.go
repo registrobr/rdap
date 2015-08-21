@@ -35,7 +35,7 @@ func TestDefaultFetcherFetch(t *testing.T) {
 	}{
 		{
 			description: "it should fetch correctly",
-			uris:        []string{"https://rdap.beta.registro.br"},
+			uris:        []string{"rdap.beta.registro.br////"},
 			queryType:   QueryTypeDomain,
 			queryValue:  "example.com",
 			header: http.Header{
@@ -96,7 +96,7 @@ func TestDefaultFetcherFetch(t *testing.T) {
 			uris:          []string{"abc%"},
 			queryType:     QueryTypeDomain,
 			queryValue:    "example.com",
-			expectedError: fmt.Errorf(`parse abc%%/domain/example.com: invalid URL escape "%%/d"`),
+			expectedError: fmt.Errorf(`parse http://abc%%/domain/example.com: percent-encoded characters in host`),
 		},
 		{
 			description: "it should fail while sending the HTTP request",
