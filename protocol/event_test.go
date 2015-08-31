@@ -22,16 +22,23 @@ func TestEventDateUnmarshalJSON(t *testing.T) {
 			},
 		},
 		{
-			description: "it should import a partial RFC3339 correctly",
+			description: "it should import a partial RFC3339 correctly (date only)",
 			data:        []byte(`"2015-08-31"`),
 			expected: EventDate{
 				Time: time.Date(2015, 8, 31, 0, 0, 0, 0, time.UTC),
 			},
 		},
 		{
+			description: "it should import a partial RFC3339 correctly (no timezone)",
+			data:        []byte(`"2015-08-31T16:12:52"`),
+			expected: EventDate{
+				Time: time.Date(2015, 8, 31, 16, 12, 52, 0, time.UTC),
+			},
+		},
+		{
 			description:   "it should fail for an invalid RFC3339",
 			data:          []byte(`"31/8/2015"`),
-			expectedError: fmt.Errorf(`parsing time ""31/8/2015"" as ""2006-01-02"": cannot parse "/2015"" as "2006"`),
+			expectedError: fmt.Errorf(`parsing time ""31/8/2015"" as ""2006-01-02T15:04:05"": cannot parse "/2015"" as "2006"`),
 		},
 	}
 
@@ -49,7 +56,7 @@ func TestEventDateUnmarshalJSON(t *testing.T) {
 
 		} else {
 			if !reflect.DeepEqual(item.expected, eventDate) {
-				t.Errorf("[%d] %s: unexpected event date returned. Expected “%#v” and got “%#v”", i, item.description, item.expected, eventDate)
+				t.Errorf("[%d] %s: unexpected event date returned. Expected “%#v” and got “%#v”", i, item.description, item.expected.String(), eventDate.String())
 			}
 		}
 	}
@@ -70,16 +77,23 @@ func TestEventDateUnmarshalText(t *testing.T) {
 			},
 		},
 		{
-			description: "it should import a partial RFC3339 correctly",
+			description: "it should import a partial RFC3339 correctly (date only)",
 			data:        []byte("2015-08-31"),
 			expected: EventDate{
 				Time: time.Date(2015, 8, 31, 0, 0, 0, 0, time.UTC),
 			},
 		},
 		{
+			description: "it should import a partial RFC3339 correctly (no timezone)",
+			data:        []byte("2015-08-31T16:12:52"),
+			expected: EventDate{
+				Time: time.Date(2015, 8, 31, 16, 12, 52, 0, time.UTC),
+			},
+		},
+		{
 			description:   "it should fail for an invalid RFC3339",
 			data:          []byte("31/8/2015"),
-			expectedError: fmt.Errorf(`parsing time "31/8/2015" as "2006-01-02": cannot parse "/2015" as "2006"`),
+			expectedError: fmt.Errorf(`parsing time "31/8/2015" as "2006-01-02T15:04:05": cannot parse "/2015" as "2006"`),
 		},
 	}
 
@@ -97,7 +111,7 @@ func TestEventDateUnmarshalText(t *testing.T) {
 
 		} else {
 			if !reflect.DeepEqual(item.expected, eventDate) {
-				t.Errorf("[%d] %s: unexpected event date returned. Expected “%#v” and got “%#v”", i, item.description, item.expected, eventDate)
+				t.Errorf("[%d] %s: unexpected event date returned. Expected “%#v” and got “%#v”", i, item.description, item.expected.String(), eventDate.String())
 			}
 		}
 	}

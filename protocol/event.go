@@ -76,21 +76,36 @@ type EventDate struct {
 }
 
 // UnmarshalJSON implements the json.Unmarshaler interface. The time is
-// expected to be a quoted string in RFC 3339 format with or without the time
+// expected to be a quoted string in RFC 3339 format with or without the
+// time/timezone
 func (e *EventDate) UnmarshalJSON(data []byte) (err error) {
-	err = e.Time.UnmarshalJSON(data)
-	if err != nil {
-		e.Time, err = time.Parse(`"2006-01-02"`, string(data))
+	if err = e.Time.UnmarshalJSON(data); err == nil {
+		return
 	}
+
+	// allow date without time
+	if e.Time, err = time.Parse(`"2006-01-02"`, string(data)); err == nil {
+		return
+	}
+
+	// allow date without timezone
+	e.Time, err = time.Parse(`"2006-01-02T15:04:05"`, string(data))
 	return
 }
 
 // UnmarshalText implements the encoding.TextUnmarshaler interface. The time
-// is expected to be in RFC 3339 format with or without the time
+// is expected to be in RFC 3339 format with or without the time/timezone
 func (e *EventDate) UnmarshalText(data []byte) (err error) {
-	err = e.Time.UnmarshalText(data)
-	if err != nil {
-		e.Time, err = time.Parse("2006-01-02", string(data))
+	if err = e.Time.UnmarshalText(data); err == nil {
+		return
 	}
+
+	// allow date without time
+	if e.Time, err = time.Parse(`2006-01-02`, string(data)); err == nil {
+		return
+	}
+
+	// allow date without timezone
+	e.Time, err = time.Parse(`2006-01-02T15:04:05`, string(data))
 	return
 }
