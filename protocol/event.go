@@ -75,6 +75,16 @@ type EventDate struct {
 	time.Time
 }
 
+// UnmarshalJSON implements the json.Unmarshaler interface. The time is
+// expected to be a quoted string in RFC 3339 format with or without the time
+func (e *EventDate) UnmarshalJSON(data []byte) (err error) {
+	err = e.Time.UnmarshalJSON(data)
+	if err != nil {
+		e.Time, err = time.Parse(`"2006-01-02"`, string(data))
+	}
+	return
+}
+
 // UnmarshalText implements the encoding.TextUnmarshaler interface. The time
 // is expected to be in RFC 3339 format with or without the time
 func (e *EventDate) UnmarshalText(data []byte) (err error) {
