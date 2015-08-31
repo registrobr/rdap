@@ -61,10 +61,26 @@ const (
 type Event struct {
 	Action EventAction `json:"eventAction"`
 	Actor  string      `json:"eventActor,omitempty"`
-	Date   time.Time   `json:"eventDate"`
+	Date   EventDate   `json:"eventDate"`
 
 	// Status was proposed by NIC.br to store the status of a current event.
 	// For NIC.br specific use was useful to store the status of a delegation
 	// check event
 	Status []Status `json:"status,omitempty"`
+}
+
+// EventDate stores a Go time type and uses a more flexible algorithm for
+// parsing the date, to allow a partial RFC 3339 format
+type EventDate struct {
+	time.Time
+}
+
+// UnmarshalText implements the encoding.TextUnmarshaler interface. The time
+// is expected to be in RFC 3339 format with or without the time
+func (e *EventDate) UnmarshalText(data []byte) (err error) {
+	err = e.Time.UnmarshalText(data)
+	if err != nil {
+		e.Time, err = time.Parse("2006-01-02", string(data))
+	}
+	return
 }
