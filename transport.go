@@ -111,7 +111,8 @@ type fetcherFunc func([]string, QueryType, string, http.Header, url.Values) (*ht
 // Fetch will try to use the addresses from the uris parameter to send
 // requests using the queryType and queryValue parameters. You can optionally
 // set HTTP headers (like X-Forwarded-For) for the RDAP server request. On
-// success will return a HTTP response, otherwise an error will be returned
+// success will return a HTTP response, otherwise an error will be returned.
+// The caller is responsible for closing the response body
 func (f fetcherFunc) Fetch(uris []string, queryType QueryType, queryValue string, header http.Header, queryString url.Values) (*http.Response, error) {
 	return f(uris, queryType, queryValue, header, queryString)
 }
@@ -194,11 +195,6 @@ func (d *defaultFetcher) fetchURI(uri string, queryType QueryType, queryValue st
 	if err != nil {
 		return nil, err
 	}
-	defer func() {
-		if resp.Body != nil {
-			resp.Body.Close()
-		}
-	}()
 
 	if resp.StatusCode == http.StatusNotFound {
 		return nil, ErrNotFound
