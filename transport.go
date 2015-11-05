@@ -197,7 +197,10 @@ func (d *defaultFetcher) fetchURI(uri string, queryType QueryType, queryValue st
 	}
 
 	if resp.StatusCode == http.StatusNotFound {
-		return nil, ErrNotFound
+		// we will return the response here so the client can analyze the body or
+		// some special HTTP headers to identify the reason why it does not
+		// exists
+		return resp, ErrNotFound
 	}
 
 	contentType := resp.Header.Get("Content-Type")

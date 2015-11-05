@@ -124,6 +124,9 @@ func TestDefaultFetcherFetch(t *testing.T) {
 				response.StatusCode = http.StatusNotFound
 				return &response, nil
 			},
+			expected: &http.Response{
+				StatusCode: http.StatusNotFound,
+			},
 			expectedError: ErrNotFound,
 		},
 		{
@@ -230,11 +233,10 @@ func TestDefaultFetcherFetch(t *testing.T) {
 
 		} else if err != nil {
 			t.Errorf("[%d] %s: unexpected error “%s”", i, item.description, err)
+		}
 
-		} else {
-			if !reflect.DeepEqual(item.expected, response) {
-				t.Errorf("[%d] “%s”: mismatch results.\n%v", i, item.description, diff(item.expected, response))
-			}
+		if !reflect.DeepEqual(item.expected, response) {
+			t.Errorf("[%d] “%s”: mismatch results.\n%v", i, item.description, diff(item.expected, response))
 		}
 	}
 }
