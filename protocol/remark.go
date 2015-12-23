@@ -33,6 +33,13 @@ const (
 	RemarkTypeObjectTruncatedUnexplainableReasons RemarkType = "object truncated due to unexplainable reasons"
 )
 
+// Proposed by NIC.br for server rate limit policies
+const (
+	// RemarkTypeObjectTruncatedServerPolicy the object does not contain all
+	// data due to server policy. Could be excessive total number of queries
+	RemarkTypeObjectTruncatedServerPolicy RemarkType = "object truncated due to server policy"
+)
+
 // RemarkType stores one of the possible remark types as listed in RFC 7483,
 // section 10.2.1
 type RemarkType string
