@@ -17,6 +17,7 @@ type AS struct {
 	Notices         []Notice        `json:"notices,omitempty"`
 	Remarks         []Remark        `json:"remarks,omitempty"`
 	Conformance
+	Port43
 }
 
 // RoutingPolicy is a NIC.br extension that stores the information of network

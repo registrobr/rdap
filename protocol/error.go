@@ -14,6 +14,7 @@ type Error struct {
 	Title       string   `json:"title,omitempty"`
 	Description []string `json:"description,omitempty"`
 	Conformance
+	Port43
 }
 
 // Error make it easy to transport the protocol error via Go error interface

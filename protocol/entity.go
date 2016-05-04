@@ -31,6 +31,7 @@ type Entity struct {
 	InetCount              int                     `json:"nicbr_inetCount,omitempty"`
 	AutnumCount            int                     `json:"nicbr_autnumCount,omitempty"`
 	Conformance
+	Port43
 
 	// LegalRepresentative was proposed by NIC.br to store the name of the
 	// persons that is responsible for this entity

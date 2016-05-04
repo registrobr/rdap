@@ -19,4 +19,5 @@ type Domain struct {
 	Network         *IPNetwork   `json:"network,omitempty"`
 	Unavailability  string       `json:"-"`
 	Conformance
+	Port43
 }

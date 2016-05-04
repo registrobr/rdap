@@ -21,6 +21,7 @@ type IPNetwork struct {
 	Remarks            []Remark            `json:"remarks,omitempty"`
 	ReverseDelegations []ReverseDelegation `json:"nicbr_reverseDelegations,omitempty"`
 	Conformance
+	Port43
 }
 
 // ReverseDelegation is a NIC.br extension to list all the IP network
