@@ -96,7 +96,7 @@ func TestDefaultFetcherFetch(t *testing.T) {
 			uris:          []string{"abc%"},
 			queryType:     QueryTypeDomain,
 			queryValue:    "example.com",
-			expectedError: fmt.Errorf(`parse http://abc%%/domain/example.com: percent-encoded characters in host`),
+			expectedError: fmt.Errorf(`parse http://abc%%/domain/example.com: invalid URL escape "%%"`),
 		},
 		{
 			description: "it should fail while sending the HTTP request",
