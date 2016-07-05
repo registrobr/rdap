@@ -11,9 +11,14 @@ type IPAddresses struct {
 // section 5.2
 type Nameserver struct {
 	ObjectClassName string       `json:"objectClassName"`
+	Handle          string       `json:"handle,omitempty"`
 	LDHName         string       `json:"ldhName,omitempty"`
 	UnicodeName     string       `json:"unicodeName,omitempty"`
+	Entities        []Entity     `json:"entities,omitempty"`
+	Status          []Status     `json:"status,omitempty"`
 	IPAddresses     *IPAddresses `json:"ipAddresses,omitempty"`
 	Remarks         []Remark     `json:"remarks,omitempty"`
+	Links           []Link       `json:"links,omitempty"`
+	Port43          string       `json:"port43,omitempty"`
 	Events          []Event      `json:"events,omitempty"`
 }
