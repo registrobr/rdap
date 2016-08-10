@@ -16,6 +16,40 @@ const (
 	// object instance, but this action is not yet complete
 	StatusPendingCreate Status = "pending create"
 
+	// StatusPendingRenew A request has been received for the renewal of the
+	// object instance but this action is not yet complete.
+	StatusPendingRenew Status = "pending renew"
+
+	// StatusPendingtransfer A request has been received for the transfer of the
+	// object instance but this action is not yet complete.
+	StatusPendingTransfer Status = "pending transfer"
+
+	// StatusPendingUpdate A request has been received for the update or
+	// modification of the object instance but this action is not yet complete.
+	StatusPendingUpdate Status = "pending update"
+
+	// StatusPendingDelete A request has been received for the deletion or removal
+	// of the object instance but this action is not yet complete. For domains,
+	// this might mean that the name is no longer published in DNS but has not yet
+	// been purged from the registry database.
+	StatusPendingDelete Status = "pending delete"
+
+	// StatusRenewProhibited Renewal or reregistration of the object instance is
+	// forbidden.
+	StatusRenewProhibited = "renew prohibited"
+
+	// StatusTransferProhibited Transfers of the registration from one registrar
+	// to another are forbidden. This type of status normally applies to DNR
+	// domain names.
+	StatusTransferProhibited = "transfer prohibited"
+
+	// StatusUpdateProhibited Updates to the object instance are forbidden.
+	StatusUpdateProhibited = "update prohibited"
+
+	// StatusDeleteProhibited Deletion of the registration of the object instance
+	// is forbidden. This type of status normally applies to DNR domain names.
+	StatusDeleteProhibited = "delete prohibited"
+
 	// StatusRemoved some of the information of the object instance has not
 	// been made available and has been removed. This is most commonly applied
 	// to entities
