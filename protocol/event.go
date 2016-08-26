@@ -19,6 +19,10 @@ const (
 	// object instance was last changed
 	EventActionLastChanged EventAction = "last changed"
 
+	// EventActionLastUpdate last date and time the database used by the RDAP
+	// service was updated from the Registry or Registrar database
+	EventActionLastUpdate EventAction = "last update"
+
 	// EventActionExpiration the object instance has been removed or will be
 	// removed at a predetermined date and time from the registry
 	EventActionExpiration EventAction = "expiration"
