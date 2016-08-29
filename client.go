@@ -11,7 +11,7 @@ import (
 
 	"net/url"
 
-	"github.com/registrobr/rdap/Godeps/_workspace/src/github.com/miekg/dns/idn"
+	"github.com/miekg/dns/idn"
 	"github.com/registrobr/rdap/protocol"
 )
 
