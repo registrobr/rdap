@@ -46,6 +46,7 @@ type RemarkType string
 
 // Remark describes Remarks as it is in RFC 7483, section 4.3
 type Remark struct {
+	Title       string   `json:"title,omitempty"`
 	Type        string   `json:"type,omitempty"`
 	Description []string `json:"description,omitempty"`
 }
