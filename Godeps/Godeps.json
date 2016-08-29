@@ -1,6 +1,7 @@
 {
 	"ImportPath": "github.com/registrobr/rdap",
-	"GoVersion": "go1.4.2",
+	"GoVersion": "go1.7",
+	"GodepVersion": "v74",
 	"Packages": [
 		"./..."
 	],
@@ -11,11 +12,15 @@
 		},
 		{
 			"ImportPath": "github.com/davecgh/go-spew/spew",
-			"Rev": "1aaf839fb07e099361e445273993ccd9adc21b07"
+			"Rev": "5215b55f46b2b919f50a1df0eaa5886afe4e3b3d"
 		},
 		{
 			"ImportPath": "github.com/miekg/dns",
-			"Rev": "1897a2a983df410a57ff88f8bfe647164b49e373"
+			"Rev": "db96a2b759cdef4f11a34506a42eb8d1290c598e"
+		},
+		{
+			"ImportPath": "github.com/miekg/dns/idn",
+			"Rev": "db96a2b759cdef4f11a34506a42eb8d1290c598e"
 		}
 	]
 }

@@ -4,8 +4,8 @@ import (
 	"io"
 	"strings"
 
-	"github.com/registrobr/rdap/Godeps/_workspace/src/github.com/aryann/difflib"
-	"github.com/registrobr/rdap/Godeps/_workspace/src/github.com/davecgh/go-spew/spew"
+	"github.com/aryann/difflib"
+	"github.com/davecgh/go-spew/spew"
 )
 
 func diff(a, b interface{}) []difflib.DiffRecord {
