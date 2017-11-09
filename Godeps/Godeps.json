@@ -19,10 +19,6 @@
 			"Rev": "8223ae840e47f0c9a1ea1d5c22bdd03b30b6b3cf"
 		},
 		{
-			"ImportPath": "github.com/miekg/dns/idn",
-			"Rev": "8223ae840e47f0c9a1ea1d5c22bdd03b30b6b3cf"
-		},
-		{
 			"ImportPath": "golang.org/x/net/idna",
 			"Rev": "a337091b0525af65de94df2eb7e98bd9962dcbe2"
 		},
