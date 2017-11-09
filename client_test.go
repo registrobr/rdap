@@ -78,6 +78,17 @@ func TestClientDomain(t *testing.T) {
 			},
 		},
 		{
+			description: "it should detect an invalid unicode domain",
+			fqdn:        "xn--東京\uffff!!@...-.jp",
+			header: http.Header{
+				"X-Forwarded-For": []string{"127.0.0.1"},
+			},
+			queryString: url.Values{
+				"ticket": []string{"1234"},
+			},
+			expectedError: fmt.Errorf(`idna: invalid label "東京\uffff!!@"`),
+		},
+		{
 			description: "it should fail to query a domain",
 			fqdn:        "example.com",
 			client: func() (*http.Response, error) {

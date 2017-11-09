@@ -279,6 +279,27 @@ func TestServiceRegistryMatchDomain(t *testing.T) {
 			},
 			expected: nil,
 		},
+		{
+			description: "it should detect an invalid fqdn",
+			fqdn:        "xn--東京\uffff!!@...-.jp",
+			registry: serviceRegistry{
+				Services: []service{
+					{
+						{"net", "com"},
+						{"https://registry.example.com/myrdap/"},
+					},
+					{
+						{"org", "mytld"},
+						{"http://example.org/"},
+					},
+					{
+						{"xn--zckzah"},
+						{"https://example.net/rdapxn--zckzah/", "http://example.net/rdapxn--zckzah/"},
+					},
+				},
+			},
+			expectedError: fmt.Errorf(`idna: invalid label "東京\uffff!!@"`),
+		},
 	}
 
 	for i, test := range tests {
