@@ -1,7 +1,7 @@
 {
 	"ImportPath": "github.com/registrobr/rdap",
-	"GoVersion": "go1.7",
-	"GodepVersion": "v74",
+	"GoVersion": "go1.8",
+	"GodepVersion": "v79",
 	"Packages": [
 		"./..."
 	],
@@ -16,11 +16,31 @@
 		},
 		{
 			"ImportPath": "github.com/miekg/dns",
-			"Rev": "db96a2b759cdef4f11a34506a42eb8d1290c598e"
+			"Rev": "8223ae840e47f0c9a1ea1d5c22bdd03b30b6b3cf"
 		},
 		{
-			"ImportPath": "github.com/miekg/dns/idn",
-			"Rev": "db96a2b759cdef4f11a34506a42eb8d1290c598e"
+			"ImportPath": "golang.org/x/net/idna",
+			"Rev": "a337091b0525af65de94df2eb7e98bd9962dcbe2"
+		},
+		{
+			"ImportPath": "golang.org/x/text/secure/bidirule",
+			"Rev": "88f656faf3f37f690df1a32515b479415e1a6769"
+		},
+		{
+			"ImportPath": "golang.org/x/text/transform",
+			"Rev": "88f656faf3f37f690df1a32515b479415e1a6769"
+		},
+		{
+			"ImportPath": "golang.org/x/text/unicode/bidi",
+			"Rev": "88f656faf3f37f690df1a32515b479415e1a6769"
+		},
+		{
+			"ImportPath": "golang.org/x/text/unicode/norm",
+			"Rev": "88f656faf3f37f690df1a32515b479415e1a6769"
+		},
+		{
+			"ImportPath": "github.com/miekg/dns/internal/socket",
+			"Rev": "8223ae840e47f0c9a1ea1d5c22bdd03b30b6b3cf"
 		}
 	]
 }
