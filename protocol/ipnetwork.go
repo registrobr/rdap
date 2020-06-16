@@ -31,4 +31,5 @@ type ReverseDelegation struct {
 	EndAddress   string       `json:"endAddress"`
 	Nameservers  []Nameserver `json:"nameservers,omitempty"`
 	Events       []Event      `json:"events"`
+	SecureDNS    *SecureDNS   `json:"secureDNS,omitempty"`
 }
