@@ -96,7 +96,7 @@ func TestDefaultFetcherFetch(t *testing.T) {
 			uris:          []string{"abc%"},
 			queryType:     QueryTypeDomain,
 			queryValue:    "example.com",
-			expectedError: fmt.Errorf(`parse http://abc%%/domain/example.com: invalid URL escape "%%"`),
+			expectedError: fmt.Errorf(`parse "http://abc%%/domain/example.com": invalid URL escape "%%"`),
 		},
 		{
 			description: "it should fail while sending the HTTP request",
@@ -774,7 +774,7 @@ func TestBootstrap(t *testing.T) {
 			queryType:     QueryTypeDomain,
 			queryValue:    "example.com",
 			bootstrapURI:  "%sabc%",
-			expectedError: fmt.Errorf(`parse dnsabc%%!(NOVERB): invalid URL escape "%%!("`),
+			expectedError: fmt.Errorf(`parse "dnsabc%%!(NOVERB)": invalid URL escape "%%!("`),
 		},
 		{
 			description:  "it should fail to send a bootstrap request",
