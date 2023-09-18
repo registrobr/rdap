@@ -44,7 +44,8 @@ type Entity struct {
 // GetEntity is an easy way to find an entity with a given role. If more than
 // one entity has the same role, the last one is returned
 func (e *Entity) GetEntity(role string) (entity Entity, found bool) {
-	for _, v := range e.Entities {
+	for i := range e.Entities {
+		v := e.Entities[i]
 		for _, r := range v.Roles {
 			if r == role {
 				entity = v

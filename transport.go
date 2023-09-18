@@ -181,7 +181,7 @@ func (d *defaultFetcher) fetchURI(uri string, queryType QueryType, queryValue st
 		uri += "?" + q
 	}
 
-	req, err := http.NewRequest("GET", uri, nil)
+	req, err := http.NewRequest(http.MethodGet, uri, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -260,7 +260,7 @@ func bootstrap(bootstrapURI string, httpClient httpClient, cacheDetector CacheDe
 				if err == nil && len(uris) == 0 && cached {
 					var nsSet []*net.NS
 					if nsSet, err = lookupNS(queryValue); err == nil && len(nsSet) > 0 {
-						serviceRegistry, cached, err = bootstrapFetch(httpClient, bootstrapURI, true, cacheDetector)
+						serviceRegistry, _, err = bootstrapFetch(httpClient, bootstrapURI, true, cacheDetector)
 						if err == nil {
 							uris, err = serviceRegistry.matchDomain(queryValue)
 						}
@@ -301,7 +301,7 @@ func bootstrap(bootstrapURI string, httpClient httpClient, cacheDetector CacheDe
 }
 
 func bootstrapFetch(httpClient httpClient, uri string, reloadCache bool, cacheDetector CacheDetector) (*serviceRegistry, bool, error) {
-	req, err := http.NewRequest("GET", uri, nil)
+	req, err := http.NewRequest(http.MethodGet, uri, nil)
 	if err != nil {
 		return nil, false, err
 	}
