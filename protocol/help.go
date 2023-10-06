@@ -5,5 +5,4 @@ type Help struct {
 	Notices []Notice `json:"notices,omitempty"`
 	Lang    string   `json:"lang,omitempty"`
 	Conformance
-	Port43
 }
