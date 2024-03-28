@@ -337,7 +337,7 @@ func TestBootstrap(t *testing.T) {
 			queryValue:   "1234",
 			bootstrapURI: "https://data.iana.org/rdap/%s.json",
 			httpClient: map[string]func(int) (*http.Response, error){
-				"https://data.iana.org/rdap/asn.json": func(executionNumber int) (*http.Response, error) {
+				"https://data.iana.org/rdap/asn.json": func(_ int) (*http.Response, error) {
 					s := serviceRegistry{
 						Version:     version,
 						Publication: time.Now(),

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"mime"
 	"net"
 	"net/http"
 	"net/url"
@@ -207,12 +208,15 @@ func (d *defaultFetcher) fetchURI(uri string, queryType QueryType, queryValue st
 		return resp, ErrForbidden
 	}
 
-	contentType := resp.Header.Get("Content-Type")
-	contentTypeParts := strings.Split(contentType, ";")
-
-	if len(contentTypeParts) == 0 || contentTypeParts[0] != "application/rdap+json" {
-		return nil, fmt.Errorf("unexpected response: %d %s",
-			resp.StatusCode, http.StatusText(resp.StatusCode))
+	rawContentType := resp.Header.Get("Content-Type")
+	contentType, _, err := mime.ParseMediaType(rawContentType)
+	switch {
+	case err != nil:
+		return nil, fmt.Errorf("unexpected response: %d %s, received content-type: %s, error: %w",
+			resp.StatusCode, http.StatusText(resp.StatusCode), rawContentType, err)
+	case contentType != "application/rdap+json":
+		return nil, fmt.Errorf("unexpected response: %d %s, received content-type: %s",
+			resp.StatusCode, http.StatusText(resp.StatusCode), rawContentType)
 	}
 
 	if resp.StatusCode != http.StatusOK {
