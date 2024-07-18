@@ -53,6 +53,14 @@ const (
 
 type bootstrapQueryType string
 
+type ErrNoMatch struct {
+	QueryValue string
+}
+
+func (e *ErrNoMatch) Error() string {
+	return fmt.Sprintf("no matches for %v", e.QueryValue)
+}
+
 func newBootstrapQueryType(queryType QueryType, queryValue string) (bootstrapQueryType, bool) {
 	switch queryType {
 	case QueryTypeDomain:
@@ -291,7 +299,7 @@ func bootstrap(bootstrapURI string, httpClient httpClient, cacheDetector CacheDe
 			}
 
 			if len(uris) == 0 {
-				return nil, fmt.Errorf("no matches for %v", queryValue)
+				return nil, &ErrNoMatch{QueryValue: queryValue}
 			}
 
 			sort.Sort(prioritizeHTTPS(uris))
