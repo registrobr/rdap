@@ -56,7 +56,7 @@ func TestEventDateUnmarshalJSON(t *testing.T) {
 		{
 			description:   "it should fail for an invalid RFC3339",
 			data:          []byte(`"31/8/2015"`),
-			expectedError: fmt.Errorf(`parsing time ""31/8/2015"" as ""2006-01-02T15:04:05"": cannot parse "/2015"" as "2006"`),
+			expectedError: fmt.Errorf(`parsing time "\"31/8/2015\"" as "\"2006-01-02T15:04:05\"": cannot parse "31/8/2015\"" as "2006"`),
 		},
 	}
 
@@ -111,7 +111,7 @@ func TestEventDateUnmarshalText(t *testing.T) {
 		{
 			description:   "it should fail for an invalid RFC3339",
 			data:          []byte("31/8/2015"),
-			expectedError: fmt.Errorf(`parsing time "31/8/2015" as "2006-01-02T15:04:05": cannot parse "/2015" as "2006"`),
+			expectedError: fmt.Errorf(`parsing time "31/8/2015" as "2006-01-02T15:04:05": cannot parse "31/8/2015" as "2006"`),
 		},
 	}
 
