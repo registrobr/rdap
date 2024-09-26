@@ -17,7 +17,7 @@ type CustomerSupportService struct {
 // Entity describes the Entity Object Class as it is in RFC 7483, section 5.1
 type Entity struct {
 	ObjectClassName        string                  `json:"objectClassName"`
-	Handle                 string                  `json:"handle"`
+	Handle                 string                  `json:"handle,omitempty"`
 	VCardArray             []interface{}           `json:"vcardArray,omitempty"`
 	Roles                  []string                `json:"roles,omitempty"`
 	PublicIds              []PublicID              `json:"publicIds,omitempty"`
