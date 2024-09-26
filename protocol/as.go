@@ -4,7 +4,7 @@ package protocol
 // RFC 7483, section 5.5
 type AS struct {
 	ObjectClassName string          `json:"objectClassName"`
-	Handle          string          `json:"handle"`
+	Handle          string          `json:"handle,omitempty"`
 	StartAutnum     uint32          `json:"startAutnum"`
 	EndAutnum       uint32          `json:"endAutnum"`
 	Name            string          `json:"name,omitempty"`
