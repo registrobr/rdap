@@ -1122,7 +1122,7 @@ func ExampleClient() {
 	fmt.Println(string(output))
 }
 
-func ExampleBootstrapClient() {
+func ExampleClient_bootstrap() {
 	c := NewClient(nil)
 
 	ipnetwork, _, err := c.Query("214.1.2.3", nil, nil)
@@ -1140,7 +1140,7 @@ func ExampleBootstrapClient() {
 	fmt.Println(string(output))
 }
 
-func ExampleAdvancedBootstrapClient() {
+func ExampleClient_aAdvancedBootstrap() {
 	var httpClient http.Client
 
 	cacheDetector := CacheDetector(func(resp *http.Response) bool {
