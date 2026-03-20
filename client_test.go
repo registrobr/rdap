@@ -880,7 +880,7 @@ func TestClientQuery(t *testing.T) {
 		header         http.Header
 		queryString    url.Values
 		client         func() (*http.Response, error)
-		expected       interface{}
+		expected       any
 		expectedHeader http.Header
 		expectedError  error
 	}{

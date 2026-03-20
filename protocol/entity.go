@@ -1,5 +1,7 @@
 package protocol
 
+import "slices"
+
 // PublicID describes Public IDs as it is in RFC 7483, section 4.8
 type PublicID struct {
 	Type       string `json:"type"`
@@ -18,7 +20,7 @@ type CustomerSupportService struct {
 type Entity struct {
 	ObjectClassName        string                  `json:"objectClassName"`
 	Handle                 string                  `json:"handle,omitempty"`
-	VCardArray             []interface{}           `json:"vcardArray,omitempty"`
+	VCardArray             []any                   `json:"vcardArray,omitempty"`
 	Roles                  []string                `json:"roles,omitempty"`
 	PublicIds              []PublicID              `json:"publicIds,omitempty"`
 	Networks               []IPNetwork             `json:"networks,omitempty"`
@@ -46,12 +48,10 @@ type Entity struct {
 func (e *Entity) GetEntity(role string) (entity Entity, found bool) {
 	for i := range e.Entities {
 		v := e.Entities[i]
-		for _, r := range v.Roles {
-			if r == role {
-				entity = v
-				found = true
-				return
-			}
+		if slices.Contains(v.Roles, role) {
+			entity = v
+			found = true
+			return
 		}
 	}
 
