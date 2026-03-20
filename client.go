@@ -243,7 +243,7 @@ func (c *Client) IP(ip net.IP, header http.Header, queryString url.Values) (*pro
 // network, domain and entity. If the format is not valid for the specific
 // search, the search is ignored. The HTTP header of the RDAP
 // response is also returned to analyze any specific flag
-func (c *Client) Query(object string, header http.Header, queryString url.Values) (interface{}, http.Header, error) {
+func (c *Client) Query(object string, header http.Header, queryString url.Values) (any, http.Header, error) {
 	if asn, err := strconv.ParseUint(object, 10, 32); err == nil {
 		return c.ASN(uint32(asn), header, queryString)
 	}

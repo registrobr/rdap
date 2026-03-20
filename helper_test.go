@@ -8,7 +8,7 @@ import (
 	"github.com/davecgh/go-spew/spew"
 )
 
-func diff(a, b interface{}) []difflib.DiffRecord {
+func diff(a, b any) []difflib.DiffRecord {
 	return difflib.Diff(
 		strings.SplitAfter(spew.Sdump(a), "\n"),
 		strings.SplitAfter(spew.Sdump(b), "\n"),
