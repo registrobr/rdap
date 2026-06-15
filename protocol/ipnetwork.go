@@ -20,6 +20,7 @@ type IPNetwork struct {
 	Notices            []Notice            `json:"notices,omitempty"`
 	Remarks            []Remark            `json:"remarks,omitempty"`
 	ReverseDelegations []ReverseDelegation `json:"nicbr_reverseDelegations,omitempty"`
+	Leasing            bool                `json:"leasing"`
 	Conformance
 	Port43
 }
