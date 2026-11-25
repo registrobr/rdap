@@ -3,6 +3,7 @@ package rdap
 import (
 	"math"
 	"net"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -91,7 +92,8 @@ func (s serviceRegistry) matchAS(asn uint32) (uris []string, err error) {
 // specific IP network to which the IP network "network" belongs.
 //
 // See http://tools.ietf.org/html/rfc7484#section-5.1
-//     http://tools.ietf.org/html/rfc7484#section-5.2
+//
+//	http://tools.ietf.org/html/rfc7484#section-5.2
 func (s serviceRegistry) matchIPNetwork(network *net.IPNet) (uris []string, err error) {
 	size := 0
 
@@ -125,7 +127,8 @@ func (s serviceRegistry) matchIPNetwork(network *net.IPNet) (uris []string, err 
 // specific IP network to which the IP belongs.
 //
 // See http://tools.ietf.org/html/rfc7484#section-5.1
-//     http://tools.ietf.org/html/rfc7484#section-5.2
+//
+//	http://tools.ietf.org/html/rfc7484#section-5.2
 func (s serviceRegistry) matchIP(ip net.IP) (uris []string, err error) {
 	size := 0
 
@@ -170,8 +173,8 @@ func (s serviceRegistry) matchDomain(fqdn string) (uris []string, err error) {
 
 			fqdnExcerpt := fqdnParts[len(fqdnParts)-len(entryParts):]
 
-			for i := len(entryParts) - 1; i >= 0; i-- {
-				if fqdnExcerpt[i] != entryParts[i] {
+			for i, entryPart := range slices.Backward(entryParts) {
+				if fqdnExcerpt[i] != entryPart {
 					continue Entries
 				}
 			}

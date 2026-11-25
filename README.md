@@ -20,13 +20,15 @@ Also support the extensions:
 Usage
 -----
 
-Download the project with:
+Add the library to your module with:
 
 ```
 go get github.com/registrobr/rdap
 ```
 
-And build a program like bellow for direct RDAP server requests:
+If you do not have a module yet, create one first with `go mod init <name>`.
+
+And build a program like below for direct RDAP server requests:
 
 ```go
 package main
@@ -34,7 +36,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"url"
+	"net/url"
 
 	"github.com/registrobr/rdap"
 )
